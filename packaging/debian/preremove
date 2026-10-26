@@ -1,0 +1,10 @@
+#!/bin/sh
+# Debian preremove
+set -e
+
+if [ -d /run/systemd/system ]; then
+    systemctl stop wpal.service >/dev/null 2>&1 || true
+    systemctl disable wpal.service >/dev/null 2>&1 || true
+fi
+
+exit 0

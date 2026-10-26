@@ -1,0 +1,27 @@
+# 构建产物
+/bin/
+/dist/
+*.exe
+*.test
+*.out
+
+# 运行时数据
+/data/
+/.a2out/
+*.db
+*.jsonl
+
+# 编辑器 / IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# 本地覆盖
+config.local.yaml
+*.local.yaml
+.env
+.env.*
+
+# 参考实现（仅本地比对用，不进发布包）
+/reference/python-impl/data/

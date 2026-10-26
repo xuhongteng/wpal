@@ -1,0 +1,35 @@
+[Unit]
+Description=Wpal - lightweight server resource monitoring dashboard
+Documentation=https://github.com/wpal/wpal
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/wpal --config /etc/wpal/config.yaml
+Restart=always
+RestartSec=5
+# 默认只监听回环地址，需要外网访问时用 nginx 反代
+User=wpal
+Group=wpal
+StateDirectory=wpal
+WorkingDirectory=/var/lib/wpal
+
+# 加固：除数据目录外全部只读
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

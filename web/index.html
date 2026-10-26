@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wpal 监控</title>
+<link rel="stylesheet" href="static/style.css?v=__BUILD__" />
+</head>
+<body>
+
+<div class="macos-desktop">
+
+  <!-- ── macOS 原生 App 视窗容器 ── -->
+  <div class="macos-window">
+
+    <!-- ── macOS 统一标题栏（Unified Title & Toolbar） ── -->
+    <header class="macos-titlebar top">
+      <div class="traffic-lights">
+        <span class="tl-btn close"></span>
+        <span class="tl-btn minimize"></span>
+        <span class="tl-btn zoom"></span>
+      </div>
+
+      <div class="window-title-group">
+        <span class="dot" id="dot"></span>
+        <span class="win-title" data-i18n="app.title">Wpal 监控</span>
+        <span class="host-badge mono" id="host-name">—</span>
+      </div>
+
+      <div class="titlebar-center">
+        <!-- 苹果胶囊状态指示 -->
+        <div class="macos-pill-status status" id="status">
+          <span class="st-dot"></span>
+          <span class="st-text" id="v-text">系统正常</span>
+          <span class="st-sep">·</span>
+          <span class="st-sub" id="v-sub">运行顺畅</span>
+        </div>
+      </div>
+
+      <div class="titlebar-right">
+        <!-- macOS 分段控制器 -->
+        <div class="macos-segmented" id="ranges">
+          <button type="button" data-range="live" class="on" data-i18n="nav.live">实时</button>
+          <button type="button" data-range="5m" data-i18n="nav.5m">5m</button>
+          <button type="button" data-range="1h" data-i18n="nav.1h">1h</button>
+          <button type="button" data-range="24h" data-i18n="nav.24h">24h</button>
+          <button type="button" data-range="7d" data-i18n="nav.7d">7d</button>
+        </div>
+
+        <div class="window-actions">
+          <!-- macOS 控制中心：活跃进程滑出抽屉按钮 -->
+          <button type="button" class="macos-icon-btn proc-drawer-btn" id="proc-drawer-toggle" title="资源消耗大户 (Top Consumers)">
+            <span class="btn-activity-icon">⚡</span>
+            <span class="btn-activity-text">进程</span>
+          </button>
+          <!-- macOS 系统事件与通知抽屉按钮 -->
+          <button type="button" class="macos-icon-btn event-drawer-btn" id="event-drawer-toggle" title="系统事件与告警中心">
+            <span class="btn-event-icon">🔔</span>
+            <span class="btn-event-text">事件</span>
+            <span class="event-badge-count" id="event-count">0</span>
+          </button>
+          <button type="button" class="macos-icon-btn" id="theme-toggle" title="外观切换">
+            <span class="theme-icon">🌙</span>
+          </button>
+          <button type="button" class="macos-icon-btn" id="lang-toggle" title="Language">
+            <span>🌐</span> <span id="lang-label">中</span>
+          </button>
+        </div>
+
+        <div class="macos-sys-meta mono">
+          <span class="uptime-tag"><i class="up-ico"></i><span id="uptime">—</span></span>
+          <span class="clock-tag" id="clock">—</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── 视窗内容主体：2×2 四宫格全景实时监控矩阵 ── -->
+    <div class="macos-body">
+      <div class="macos-quad-grid" id="metrics">
+
+        <!-- 象限 1 (左上)：CPU 算力与核心负载 -->
+        <div class="quad-card metric" data-metric="cpu" id="metric-cpu">
+          <div class="quad-head">
+            <div class="qh-left">
+              <span class="quad-indicator" style="background:var(--mac-blue)"></span>
+              <div class="qh-title-group">
+                <span class="quad-title m-label" data-i18n="stage.tab.cpu">CPU 算力与核心</span>
+                <span class="quad-sub mono" id="cpu-sub">0.4 · 4核</span>
+              </div>
+            </div>
+            <div class="qh-right m-val">
+              <span class="quad-num mono" id="cpu-val">—</span><i class="unit">%</i>
+            </div>
+          </div>
+          <div class="quad-chart-wrap">
+            <div class="chart quad-chart" id="chart-cpu"></div>
+          </div>
+          <div class="quad-footer">
+            <div class="qf-bar">
+              <span class="qf-label" data-i18n="cores.title">4 核心微矩阵</span>
+              <span class="mono qf-note" id="cores-note">—</span>
+            </div>
+            <div class="cores" id="cores"></div>
+          </div>
+        </div>
+
+        <!-- 象限 2 (右上)：内存与 Swap 水位 -->
+        <div class="quad-card metric" data-metric="mem" id="metric-mem">
+          <div class="quad-head">
+            <div class="qh-left">
+              <span class="quad-indicator" style="background:var(--mac-purple)"></span>
+              <div class="qh-title-group">
+                <span class="quad-title m-label" data-i18n="stage.tab.memory">内存与交换区</span>
+                <span class="quad-sub mono" id="mem-sub">—</span>
+              </div>
+            </div>
+            <div class="qh-right m-val">
+              <span class="quad-num mono" id="mem-val">—</span><i class="unit">%</i>
+            </div>
+          </div>
+          <div class="quad-chart-wrap">
+            <div class="chart quad-chart" id="chart-mem"></div>
+          </div>
+          <div class="quad-footer">
+            <div class="qf-bar">
+              <span class="qf-label" data-i18n="card.memory">内存细项水位</span>
+            </div>
+            <div class="rows quad-rows" id="mem-rows"></div>
+          </div>
+        </div>
+
+        <!-- 象限 3 (左下)：网络流量与双向吞吐 -->
+        <div class="quad-card metric" data-metric="net" id="metric-net">
+          <div class="quad-head">
+            <div class="qh-left">
+              <span class="quad-indicator" style="background:var(--mac-green)"></span>
+              <div class="qh-title-group">
+                <span class="quad-title m-label" data-i18n="stage.tab.network">网络双向吞吐</span>
+                <span class="quad-sub mono" id="net-sub">—</span>
+              </div>
+            </div>
+            <div class="qh-right m-val">
+              <span class="quad-num mono" id="net-val">—</span><i class="unit">MB/s</i>
+            </div>
+          </div>
+          <div class="quad-chart-wrap">
+            <div class="chart quad-chart" id="chart-net"></div>
+          </div>
+          <div class="quad-footer">
+            <div class="qf-bar">
+              <span class="qf-label" data-i18n="card.network">物理接口吞吐</span>
+            </div>
+            <div class="rows quad-rows" id="net-rows"></div>
+          </div>
+        </div>
+
+        <!-- 象限 4 (右下)：磁盘存储与读写 I/O -->
+        <div class="quad-card metric" data-metric="disk" id="metric-disk">
+          <div class="quad-head">
+            <div class="qh-left">
+              <span class="quad-indicator" style="background:var(--mac-orange)"></span>
+              <div class="qh-title-group">
+                <span class="quad-title m-label" data-i18n="stage.tab.disk">磁盘水位与 I/O</span>
+                <span class="quad-sub mono" id="disk-sub">—</span>
+              </div>
+            </div>
+            <div class="qh-right m-val">
+              <span class="quad-num mono" id="disk-val">—</span><i class="unit">%</i>
+            </div>
+          </div>
+          <div class="quad-chart-wrap">
+            <div class="chart quad-chart" id="chart-disk"></div>
+          </div>
+          <div class="quad-footer">
+            <div class="qf-bar">
+              <span class="qf-label" data-i18n="card.disk">挂载分区水位</span>
+            </div>
+            <div class="rows quad-rows" id="disk-rows"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    </div>
+
+    <!-- ── 通用全屏遮罩 ── -->
+    <div class="drawer-backdrop" id="drawer-backdrop"></div>
+
+    <!-- ── 抽屉 1: macOS iStat Menus 风格资源消耗大户 (Top Consumers) ── -->
+    <aside class="macos-drawer" id="proc-drawer" aria-hidden="true">
+      <div class="drawer-header">
+        <div class="dh-title-group">
+          <span class="dh-icon">⚡</span>
+          <div class="dh-text">
+            <span class="dh-title">资源消耗大户</span>
+            <span class="dh-sub mono">iStat Menus Architecture · Top Consumers</span>
+          </div>
+        </div>
+        <div class="dh-actions">
+          <button type="button" class="drawer-close-btn" id="drawer-close" title="关闭 (Esc)">✕</button>
+        </div>
+      </div>
+
+      <div class="drawer-toolbar">
+        <!-- 切换排序维度 (CPU / 内存) -->
+        <div class="mac-seg" id="proc-sort">
+          <button type="button" data-sort="cpu" class="on">⚡ CPU 消耗</button>
+          <button type="button" data-sort="mem">🧠 内存占用</button>
+        </div>
+
+        <!-- 过滤输入 -->
+        <div class="mac-search">
+          <span class="search-glass">🔍</span>
+          <input type="text" id="proc-filter" class="mac-input" placeholder="搜索进程 / PID..." data-i18n-ph="search.procs" />
+        </div>
+      </div>
+
+      <div class="drawer-body">
+        <div class="istat-consumers" id="proc-rows"></div>
+      </div>
+    </aside>
+
+    <!-- ── 抽屉 2: macOS 通知中心风格系统事件与告警流 (Alerts & Event Center) ── -->
+    <aside class="macos-drawer event-drawer" id="event-drawer" aria-hidden="true">
+      <div class="drawer-header">
+        <div class="dh-title-group">
+          <span class="dh-icon event-icon">🔔</span>
+          <div class="dh-text">
+            <span class="dh-title">系统事件与告警通知</span>
+            <span class="dh-sub mono">Notification Center · Event Stream</span>
+          </div>
+        </div>
+        <div class="dh-actions">
+          <button type="button" class="drawer-close-btn" id="event-drawer-close" title="关闭 (Esc)">✕</button>
+        </div>
+      </div>
+
+      <div class="drawer-toolbar event-toolbar">
+        <div class="event-tb-left">
+          <span class="event-dot-pulse">●</span>
+          <span class="event-tb-title">实时运行健康轨迹</span>
+        </div>
+        <button type="button" class="mac-btn-sub" id="event-toggle" data-i18n="events.expand">展开全部</button>
+      </div>
+
+      <div class="drawer-body event-drawer-body">
+        <!-- 当前活跃告警 -->
+        <div class="event-section-label">活跃告警状态</div>
+        <div class="alerts" id="alert-list"></div>
+
+        <!-- 历史事件时间流 -->
+        <div class="event-section-label" style="margin-top:16px;">健康事件时间轴</div>
+        <div class="events" id="event-list"></div>
+      </div>
+    </aside>
+
+    </div>
+
+    <!-- ── 窗口状态栏（Window Statusbar） ── -->
+    <footer class="macos-statusbar app-foot">
+      <div class="status-left">
+        <span class="pulse-leaf">●</span>
+        <span id="foot-meta">macOS 27 Retina Display Architecture · Wpal</span>
+        <span class="st-meta mono" id="st-meta"></span>
+      </div>
+      <div class="status-right mono">
+        <span class="version-tag" id="build">__VERSION__</span>
+      </div>
+    </footer>
+
+  </div>
+
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="static/vendor/echarts.min.js?v=__BUILD__"></script>
+<script src="static/i18n.js?v=__BUILD__"></script>
+<script src="static/app.js?v=__BUILD__"></script>
+</body>
+</html>

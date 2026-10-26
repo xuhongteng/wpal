@@ -1,0 +1,535 @@
+{
+    "ts": 1792781040.9102867,
+    "host": {
+        "hostname": "VM-0-14-ubuntu",
+        "kernel": "7.0.0-30-generic",
+        "label": "",
+        "uptime": 1242982.9101762772,
+        "boot_time": 1791538058.0
+    },
+    "cpu": {
+        "total": 28.93,
+        "breakdown": {
+            "busy": 28.93,
+            "user": 23.03,
+            "system": 4.21,
+            "iowait": 1.69,
+            "steal": 0.0,
+            "idle": 71.07
+        },
+        "percore": [
+            {
+                "busy": 39.77,
+                "user": 31.82,
+                "system": 5.68,
+                "iowait": 2.27,
+                "steal": 0.0
+            },
+            {
+                "busy": 21.11,
+                "user": 16.67,
+                "system": 3.33,
+                "iowait": 1.11,
+                "steal": 0.0
+            },
+            {
+                "busy": 22.47,
+                "user": 19.1,
+                "system": 3.37,
+                "iowait": 0.0,
+                "steal": 0.0
+            },
+            {
+                "busy": 32.58,
+                "user": 24.72,
+                "system": 4.49,
+                "iowait": 3.37,
+                "steal": 0.0
+            }
+        ],
+        "cores": 4,
+        "physical": 4,
+        "load1": 1.68,
+        "load5": 1.12,
+        "load15": 0.8,
+        "ctx_switch_rate": 5739.6,
+        "freq_mhz": 2595.1
+    },
+    "mem": {
+        "total": 3898662912.0,
+        "used": 2077962240.0,
+        "available": 1820700672.0,
+        "free": 282558464.0,
+        "percent": 53.3,
+        "cached": 1864314880.0,
+        "buffers": 34476032.0,
+        "shared": 58621952.0,
+        "swap_total": 2147479552.0,
+        "swap_used": 1680056320.0,
+        "swap_free": 467423232.0,
+        "swap_percent": 78.2
+    },
+    "disk": {
+        "partitions": [
+            {
+                "device": "/dev/vda3",
+                "mount": "/",
+                "fstype": "ext4",
+                "total": 41601839104,
+                "used": 17737674752,
+                "free": 22051655680,
+                "percent": 44.6,
+                "inode_percent": 10.38,
+                "inode_total": 2583616,
+                "inode_free": 2315438
+            },
+            {
+                "device": "/dev/vda1",
+                "mount": "/boot/efi",
+                "fstype": "vfat",
+                "total": 562999296,
+                "used": 6606848,
+                "free": 556392448,
+                "percent": 1.2,
+                "inode_percent": 0.0,
+                "inode_total": 0,
+                "inode_free": 0
+            }
+        ],
+        "io": [
+            {
+                "name": "vda",
+                "read_bps": 7558751.148383715,
+                "write_bps": 400494.1229655196,
+                "read_iops": 141.6079031229107,
+                "write_iops": 14.61033921109396,
+                "busy": 12.03
+            },
+            {
+                "name": "vda3",
+                "read_bps": 7558751.148383715,
+                "write_bps": 400494.1229655196,
+                "read_iops": 141.6079031229107,
+                "write_iops": 14.61033921109396,
+                "busy": 12.14
+            },
+            {
+                "name": "vda1",
+                "read_bps": 0.0,
+                "write_bps": 0.0,
+                "read_iops": 0.0,
+                "write_iops": 0.0,
+                "busy": 0.0
+            },
+            {
+                "name": "vda2",
+                "read_bps": 0.0,
+                "write_bps": 0.0,
+                "read_iops": 0.0,
+                "write_iops": 0.0,
+                "busy": 0.0
+            },
+            {
+                "name": "sr0",
+                "read_bps": 0.0,
+                "write_bps": 0.0,
+                "read_iops": 0.0,
+                "write_iops": 0.0,
+                "busy": 0.0
+            }
+        ]
+    },
+    "net": {
+        "interfaces": [
+            {
+                "name": "eth0",
+                "rx_bps": 12206.3764747455,
+                "tx_bps": 31665.10055942864,
+                "rx_pps": 55.06974010335416,
+                "tx_pps": 60.689101338390294,
+                "rx_total": 32121134538,
+                "tx_total": 40704656986,
+                "err_in": 0,
+                "err_out": 0,
+                "drop_in": 0,
+                "drop_out": 0,
+                "virtual": false
+            },
+            {
+                "name": "lo",
+                "rx_bps": 3381.731591244748,
+                "tx_bps": 3381.731591244748,
+                "rx_pps": 12.362594717079505,
+                "tx_pps": 12.362594717079505,
+                "rx_total": 21481721425,
+                "tx_total": 21481721425,
+                "err_in": 0,
+                "err_out": 0,
+                "drop_in": 0,
+                "drop_out": 0,
+                "virtual": false
+            }
+        ],
+        "tcp": {
+            "LISTEN": 18,
+            "ESTABLISHED": 14,
+            "TIME_WAIT": 26
+        },
+        "tcp_total": 58
+    },
+    "procs": [
+        {
+            "pid": 3924348,
+            "name": "minimax-code app-server --instance-id a596d4d5-c8dd-4ae6-a8e7-57db8858ffec",
+            "user": "1000",
+            "status": "sleeping",
+            "cpu": 85.3,
+            "rss": 697524224.0,
+            "mem_pct": 17.891,
+            "threads": 11,
+            "cmd": "minimax-code app-server --instance-id a596d4d5-c8dd-4ae6-a8e7-57db8858ffec                                                                                                          "
+        },
+        {
+            "pid": 372282,
+            "name": "uvicorn",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 5.5,
+            "rss": 50847744.0,
+            "mem_pct": 1.304,
+            "threads": 15,
+            "cmd": "/usr/local/bin/python3.12 /usr/local/bin/uvicorn app.main:app --host 127.0.0.1 --port 8891 --proxy-headers --ws auto"
+        },
+        {
+            "pid": 7356,
+            "name": "barad_agent",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 2.2,
+            "rss": 14786560.0,
+            "mem_pct": 0.379,
+            "threads": 5,
+            "cmd": "barad_agent                                 "
+        },
+        {
+            "pid": 7994,
+            "name": "YDService",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 1.1,
+            "rss": 46809088.0,
+            "mem_pct": 1.201,
+            "threads": 24,
+            "cmd": "/usr/local/qcloud/YunJing/YDEyes/YDService"
+        },
+        {
+            "pid": 26312,
+            "name": "containerd-shim-runc-v2",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 1.1,
+            "rss": 11468800.0,
+            "mem_pct": 0.294,
+            "threads": 13,
+            "cmd": "/usr/bin/containerd-shim-runc-v2 -namespace moby -id e5b5dc301f155546e3844c29bb2aa223c12b13f142622b852eb6c77255e442e4 -address /run/containerd/containerd.sock"
+        },
+        {
+            "pid": 412954,
+            "name": "postgres",
+            "user": "70",
+            "status": "sleeping",
+            "cpu": 1.1,
+            "rss": 26066944.0,
+            "mem_pct": 0.669,
+            "threads": 1,
+            "cmd": "postgres: sub2api sub2api 172.19.0.4(45570) idle"
+        },
+        {
+            "pid": 1533261,
+            "name": "sub2api",
+            "user": "1000",
+            "status": "sleeping",
+            "cpu": 1.1,
+            "rss": 60899328.0,
+            "mem_pct": 1.562,
+            "threads": 12,
+            "cmd": "/app/sub2api"
+        },
+        {
+            "pid": 1,
+            "name": "systemd",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 0.0,
+            "rss": 12419072.0,
+            "mem_pct": 0.319,
+            "threads": 1,
+            "cmd": "/usr/lib/systemd/systemd --switched-root --system --deserialize=48 showopts"
+        },
+        {
+            "pid": 2,
+            "name": "kthreadd",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 0.0,
+            "rss": 0.0,
+            "mem_pct": 0.0,
+            "threads": 1,
+            "cmd": ""
+        },
+        {
+            "pid": 3,
+            "name": "pool_workqueue_release",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 0.0,
+            "rss": 0.0,
+            "mem_pct": 0.0,
+            "threads": 1,
+            "cmd": ""
+        },
+        {
+            "pid": 4,
+            "name": "kworker/R-rcu_gp",
+            "user": "root",
+            "status": "idle",
+            "cpu": 0.0,
+            "rss": 0.0,
+            "mem_pct": 0.0,
+            "threads": 1,
+            "cmd": ""
+        },
+        {
+            "pid": 5,
+            "name": "kworker/R-sync_wq",
+            "user": "root",
+            "status": "idle",
+            "cpu": 0.0,
+            "rss": 0.0,
+            "mem_pct": 0.0,
+            "threads": 1,
+            "cmd": ""
+        },
+        {
+            "pid": 6,
+            "name": "kworker/R-kvfree_rcu_reclaim",
+            "user": "root",
+            "status": "idle",
+            "cpu": 0.0,
+            "rss": 0.0,
+            "mem_pct": 0.0,
+            "threads": 1,
+            "cmd": ""
+        },
+        {
+            "pid": 7,
+            "name": "kworker/R-slub_flushwq",
+            "user": "root",
+            "status": "idle",
+            "cpu": 0.0,
+            "rss": 0.0,
+            "mem_pct": 0.0,
+            "threads": 1,
+            "cmd": ""
+        },
+        {
+            "pid": 8,
+            "name": "kworker/R-netns",
+            "user": "root",
+            "status": "idle",
+            "cpu": 0.0,
+            "rss": 0.0,
+            "mem_pct": 0.0,
+            "threads": 1,
+            "cmd": ""
+        }
+    ],
+    "procs_mem": [
+        {
+            "pid": 3924348,
+            "name": "minimax-code app-server --instance-id a596d4d5-c8dd-4ae6-a8e7-57db8858ffec",
+            "user": "1000",
+            "status": "sleeping",
+            "cpu": 85.3,
+            "rss": 697524224.0,
+            "mem_pct": 17.891,
+            "threads": 11,
+            "cmd": "minimax-code app-server --instance-id a596d4d5-c8dd-4ae6-a8e7-57db8858ffec                                                                                                          "
+        },
+        {
+            "pid": 1391576,
+            "name": "java",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 0.0,
+            "rss": 160960512.0,
+            "mem_pct": 4.129,
+            "threads": 41,
+            "cmd": "java -Xmx512m -Xms256m -XX:SharedArchiveFile=application.jsa -jar application.jar"
+        },
+        {
+            "pid": 25440,
+            "name": "dockerd",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 0.0,
+            "rss": 105934848.0,
+            "mem_pct": 2.717,
+            "threads": 22,
+            "cmd": "/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock"
+        },
+        {
+            "pid": 1548819,
+            "name": "CLIProxyAPI",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 0.0,
+            "rss": 68161536.0,
+            "mem_pct": 1.748,
+            "threads": 11,
+            "cmd": "./CLIProxyAPI"
+        },
+        {
+            "pid": 418593,
+            "name": "python",
+            "user": "1000",
+            "status": "sleeping",
+            "cpu": 0.0,
+            "rss": 64970752.0,
+            "mem_pct": 1.666,
+            "threads": 2,
+            "cmd": "python -m pytest tests/unit tests/contract -q"
+        },
+        {
+            "pid": 1533261,
+            "name": "sub2api",
+            "user": "1000",
+            "status": "sleeping",
+            "cpu": 1.1,
+            "rss": 60899328.0,
+            "mem_pct": 1.562,
+            "threads": 12,
+            "cmd": "/app/sub2api"
+        },
+        {
+            "pid": 418329,
+            "name": "uvicorn",
+            "user": "1000",
+            "status": "sleeping",
+            "cpu": 0.0,
+            "rss": 59801600.0,
+            "mem_pct": 1.534,
+            "threads": 5,
+            "cmd": "/usr/local/bin/python3.12 /usr/local/bin/uvicorn app.main:app --host 0.0.0.0 --port 8800 --proxy-headers"
+        },
+        {
+            "pid": 372282,
+            "name": "uvicorn",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 5.5,
+            "rss": 50847744.0,
+            "mem_pct": 1.304,
+            "threads": 15,
+            "cmd": "/usr/local/bin/python3.12 /usr/local/bin/uvicorn app.main:app --host 127.0.0.1 --port 8891 --proxy-headers --ws auto"
+        },
+        {
+            "pid": 24361,
+            "name": "containerd",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 0.0,
+            "rss": 49762304.0,
+            "mem_pct": 1.276,
+            "threads": 13,
+            "cmd": "/usr/bin/containerd"
+        },
+        {
+            "pid": 7994,
+            "name": "YDService",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 1.1,
+            "rss": 46809088.0,
+            "mem_pct": 1.201,
+            "threads": 24,
+            "cmd": "/usr/local/qcloud/YunJing/YDEyes/YDService"
+        },
+        {
+            "pid": 349724,
+            "name": "minimax-code app-server",
+            "user": "1000",
+            "status": "sleeping",
+            "cpu": 0.0,
+            "rss": 41222144.0,
+            "mem_pct": 1.057,
+            "threads": 7,
+            "cmd": "minimax-code app-server                                                                                                                                                 "
+        },
+        {
+            "pid": 418553,
+            "name": "docker",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 0.0,
+            "rss": 33796096.0,
+            "mem_pct": 0.867,
+            "threads": 9,
+            "cmd": "docker run --rm -v /home/ubuntu/pylab:/w -w /w pylab-app:latest python -m pytest tests/unit tests/contract -q"
+        },
+        {
+            "pid": 1526930,
+            "name": "mihomo",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 0.0,
+            "rss": 29671424.0,
+            "mem_pct": 0.761,
+            "threads": 13,
+            "cmd": "/usr/local/bin/mihomo -d /etc/mihomo"
+        },
+        {
+            "pid": 720,
+            "name": "systemd-journald",
+            "user": "root",
+            "status": "sleeping",
+            "cpu": 0.0,
+            "rss": 29155328.0,
+            "mem_pct": 0.748,
+            "threads": 1,
+            "cmd": "/usr/lib/systemd/systemd-journald"
+        },
+        {
+            "pid": 412954,
+            "name": "postgres",
+            "user": "70",
+            "status": "sleeping",
+            "cpu": 1.1,
+            "rss": 26066944.0,
+            "mem_pct": 0.669,
+            "threads": 1,
+            "cmd": "postgres: sub2api sub2api 172.19.0.4(45570) idle"
+        }
+    ],
+    "sys": {
+        "procs": 215,
+        "threads": 630,
+        "procs_running": 2,
+        "procs_blocked": 0,
+        "fd_used": 4233,
+        "fd_max": 9223372036854775807,
+        "entropy": 256.0,
+        "processes_started": 13000003
+    },
+    "events": [],
+    "active_alerts": [
+        {
+            "key": "swap",
+            "label": "Swap \u4f7f\u7528\u7387",
+            "level": "warning",
+            "value": 78.2,
+            "unit": "%",
+            "source": "mem"
+        }
+    ]
+}

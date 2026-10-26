@@ -1,0 +1,39 @@
+# wpal 容器编排
+#
+# 关键点：容器需要以宿主的 PID / 网络命名空间运行，
+# 并把宿主根目录只读挂载进来，否则读到的只是容器自己的指标。
+#
+#   docker compose up -d
+#   访问 http://127.0.0.1:8891/
+
+services:
+  wpal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
+    image: wpal:latest
+    container_name: wpal
+    restart: unless-stopped
+    # 看到宿主的真实进程与网络
+    pid: host
+    network_mode: host
+    volumes:
+      # 环形历史文件
+      - ./data:/data
+      # 宿主根目录（只读）：用于读取真实挂载表与分区容量
+      - /:/host/root:ro
+    command:
+      - "--listen"
+      - "127.0.0.1:8891"
+      - "--data-dir"
+      - "/data"
+      - "--host-root"
+      - "/host/root"
+    healthcheck:
+      test: ["CMD", "/wpal", "--version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

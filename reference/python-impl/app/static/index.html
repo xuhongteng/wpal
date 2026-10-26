@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>服务器资源监控</title>
+<link rel="stylesheet" href="static/style.css?v=__BUILD__" />
+</head>
+<body>
+
+<header class="top">
+  <div class="top-l">
+    <span class="dot" id="dot"></span>
+    <h1>服务器资源监控</h1>
+    <span class="sep"></span>
+    <span class="muted mono" id="host-name">—</span>
+  </div>
+  <div class="top-r">
+    <div class="seg" id="ranges">
+      <button type="button" data-range="live" class="on">实时</button>
+      <button type="button" data-range="5m">5分</button>
+      <button type="button" data-range="1h">1时</button>
+      <button type="button" data-range="6h">6时</button>
+      <button type="button" data-range="24h">24时</button>
+      <button type="button" data-range="7d">7天</button>
+    </div>
+    <span class="muted mono" id="uptime">—</span>
+    <span class="muted mono" id="clock">—</span>
+  </div>
+</header>
+
+<section class="hero" id="hero">
+  <div class="verdict">
+    <div class="v-state" id="v-state"><span class="v-dot"></span><span id="v-text">采集中</span></div>
+    <div class="v-sub" id="v-sub">等待第一帧数据</div>
+  </div>
+
+  <div class="metrics" id="metrics">
+    <div class="metric" data-metric="cpu" id="metric-cpu">
+      <div class="m-label">CPU</div>
+      <div class="m-val"><span id="cpu-val">—</span><i>%</i></div>
+      <div class="m-bar"><i id="cpu-bar"></i></div>
+      <div class="m-foot">
+        <span class="muted mono" id="cpu-sub">—</span>
+        <svg class="spark" id="spark-cpu" viewBox="0 0 72 20" preserveAspectRatio="none"><path class="s-area"/><path class="s-line"/><circle class="s-dot" r="2.2"/></svg>
+      </div>
+    </div>
+
+    <div class="metric" data-metric="mem" id="metric-mem">
+      <div class="m-label">内存</div>
+      <div class="m-val"><span id="mem-val">—</span><i>%</i></div>
+      <div class="m-bar"><i id="mem-bar"></i></div>
+      <div class="m-foot">
+        <span class="muted mono" id="mem-sub">—</span>
+        <svg class="spark" id="spark-mem" viewBox="0 0 72 20" preserveAspectRatio="none"><path class="s-area"/><path class="s-line"/><circle class="s-dot" r="2.2"/></svg>
+      </div>
+    </div>
+
+    <div class="metric" data-metric="disk" id="metric-disk">
+      <div class="m-label">磁盘</div>
+      <div class="m-val"><span id="disk-val">—</span><i>%</i></div>
+      <div class="m-bar"><i id="disk-bar"></i></div>
+      <div class="m-foot">
+        <span class="muted mono" id="disk-sub">—</span>
+        <svg class="spark" id="spark-disk" viewBox="0 0 72 20" preserveAspectRatio="none"><path class="s-area"/><path class="s-line"/><circle class="s-dot" r="2.2"/></svg>
+      </div>
+    </div>
+
+    <div class="metric" data-metric="net" id="metric-net">
+      <div class="m-label">网络</div>
+      <div class="m-val"><span id="net-val">—</span><i>MB/s</i></div>
+      <div class="m-bar split"><i id="net-bar-rx"></i><i id="net-bar-tx"></i></div>
+      <div class="m-foot">
+        <span class="muted mono" id="net-sub">—</span>
+        <svg class="spark" id="spark-net" viewBox="0 0 72 20" preserveAspectRatio="none"><path class="s-area"/><path class="s-line"/><circle class="s-dot" r="2.2"/></svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main class="grid">
+  <section class="card span-7">
+    <div class="c-head">
+      <h2>CPU</h2>
+      <span class="legend">
+        <span class="lg" style="--c:#1d4ed8">用户</span>
+        <span class="lg" style="--c:#3b82f6">系统</span>
+        <span class="lg" style="--c:#f59e0b">iowait</span>
+        <span class="lg" style="--c:#a78bfa">steal</span>
+      </span>
+    </div>
+    <div class="chart" id="chart-cpu"></div>
+    <div class="cores" id="cores"></div>
+  </section>
+
+  <section class="card span-5">
+    <div class="c-head">
+      <h2>内存</h2>
+      <span class="muted mono" id="mem-hint">实时</span>
+    </div>
+    <div class="chart" id="chart-mem"></div>
+    <div class="rows" id="mem-rows"></div>
+  </section>
+
+  <section class="card span-6">
+    <div class="c-head">
+      <h2>网络</h2>
+      <span class="muted mono" id="net-hint">实时</span>
+    </div>
+    <div class="chart" id="chart-net"></div>
+    <div class="rows" id="net-rows"></div>
+  </section>
+
+  <section class="card span-6">
+    <div class="c-head">
+      <h2>磁盘</h2>
+      <span class="muted mono" id="disk-hint">实时</span>
+    </div>
+    <div class="chart" id="chart-disk"></div>
+    <div class="rows" id="disk-rows"></div>
+  </section>
+
+  <section class="card span-8">
+    <div class="c-head">
+      <h2>进程</h2>
+      <div class="seg small" id="proc-sort">
+        <button type="button" data-sort="cpu" class="on">CPU</button>
+        <button type="button" data-sort="mem">内存</button>
+      </div>
+    </div>
+    <div class="rows proc" id="proc-rows"></div>
+  </section>
+
+  <section class="card span-4">
+    <div class="c-head">
+      <h2>告警</h2>
+      <div class="head-r">
+        <button type="button" class="link" id="event-toggle">展开全部</button>
+        <span class="muted mono" id="event-count">—</span>
+      </div>
+    </div>
+    <div class="alerts" id="alert-list"></div>
+    <div class="events" id="event-list"></div>
+  </section>
+</main>
+
+<footer class="foot">
+  <span id="foot-meta">数据来源 /proc · psutil · 1s 采样</span>
+  <span class="foot-v" id="build">v__BUILD__</span>
+</footer>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="static/vendor/echarts.min.js?v=__BUILD__"></script>
+<script src="static/app.js?v=__BUILD__"></script>
+</body>
+</html>

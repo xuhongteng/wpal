@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WiX：把 wpal 注册为 Windows 服务 -->
+<ServiceInstall Id="WpalServiceInstall"
+                Name="wpal"
+                DisplayName="Wpal - Server Resource Monitor"
+                Description="Lightweight server resource monitoring dashboard."
+                Type="ownProcess"
+                Start="auto"
+                ErrorControl="normal"
+                Account="LocalSystem"
+                Vital="yes">
+    <ServiceDependency>
+        <DependentService Name="Tcpip" Group="network" />
+    </ServiceDependency>
+    <ServiceConfig
+        FailureActionsWhen="nonUninstall"
+        RestartServiceDelayInSeconds="5"
+        ResetPeriodInSeconds="86400"
+        RestartServiceCountInSeconds="86400" />
+</ServiceInstall>
+
+<ServiceControl Id="WpalServiceControl"
+                Name="wpal"
+                Start="install"
+                Stop="both"
+                Remove="uninstall"
+                Wait="yes" />

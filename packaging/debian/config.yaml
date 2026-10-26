@@ -1,0 +1,38 @@
+# wpal 默认配置
+#
+# 优先级：内置默认值 < 本文件 < 环境变量 < 命令行参数
+
+server:
+  # 默认只监听回环地址；对外暴露请用 nginx 反代，避免裸奔在公网上。
+  listen: "127.0.0.1:8891"
+  # 部署在子路径下时填写，例如 /monitor（需与 nginx 的 proxy_pass 一致）
+  base_path: ""
+
+collect:
+  # 采样周期
+  interval: 1s
+  # 是否统计 docker0 / veth / br-* 等虚拟网卡
+  include_virtual_nics: false
+  # 进程榜长度
+  top_processes: 15
+  # 容器内运行时指向宿主根目录；裸机部署留空
+  host_root: ""
+  # 展示用的主机名覆盖值
+  label: ""
+
+history:
+  enabled: true
+  # 留存时长
+  retain: 168h
+  # 落盘周期
+  persist_interval: 10s
+  # 数据目录（systemd 部署时为 /var/lib/wpal）
+  data_dir: "/var/lib/wpal"
+
+alerts:
+  cpu:    { warn: 80,  crit: 93, hold: 30s, recover: 20s }
+  memory: { warn: 85,  crit: 94, hold: 20s, recover: 20s }
+  swap:   { warn: 50,  crit: 85, hold: 60s, recover: 30s }
+  disk:   { warn: 80,  crit: 90, hold: 60s, recover: 60s }
+  inode:  { warn: 85,  crit: 95, hold: 60s, recover: 60s }
+  load:   { warn: 1.5, crit: 3.0, hold: 45s, recover: 30s }

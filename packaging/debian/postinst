@@ -1,0 +1,25 @@
+#!/bin/sh
+# Debian postinst
+set -e
+
+if ! getent group wpal >/dev/null; then
+    addgroup --system wpal
+fi
+if ! getent passwd wpal >/dev/null; then
+    adduser --system --ingroup wpal --home /var/lib/wpal \
+            --no-create-home --disabled-login --shell /usr/sbin/nologin wpal
+fi
+
+mkdir -p /var/lib/wpal /etc/wpal
+chown -R wpal:wpal /var/lib/wpal
+
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload || true
+    systemctl enable wpal.service >/dev/null 2>&1 || true
+    # 升级时不自动重启，避免用户正在看面板时被中断
+    if [ "$1" = "configure" ] && [ -z "${LITESIGHT_NO_START:-}" ]; then
+        systemctl try-restart wpal.service >/dev/null 2>&1 || true
+    fi
+fi
+
+exit 0

@@ -1,0 +1,1233 @@
+/* ==========================================================================
+   Litesight 监控 · macOS 27 Retina Display 原生设计系统
+   ========================================================================== */
+
+:root {
+  /* 苹果官方 macOS 调色板 (Light) */
+  --mac-bg-desktop: #edf2f7;
+  --mac-wall: radial-gradient(at 0% 0%, #dbeafe 0px, transparent 50%),
+              radial-gradient(at 100% 0%, #f3e8ff 0px, transparent 50%),
+              radial-gradient(at 50% 100%, #e0f2fe 0px, transparent 60%);
+
+  --mac-window-bg: rgba(255, 255, 255, 0.88);
+  --mac-window-border: rgba(255, 255, 255, 0.85);
+  --mac-toolbar-bg: rgba(248, 250, 252, 0.75);
+  --mac-card-bg: rgba(255, 255, 255, 0.75);
+  --mac-sub-bg: rgba(241, 245, 249, 0.7);
+
+  --mac-border: rgba(203, 213, 225, 0.65);
+  --mac-border-sub: rgba(226, 232, 240, 0.6);
+
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-dim: #94a3b8;
+
+  /* 苹果色彩体系 */
+  --mac-blue: #0071e3;
+  --mac-purple: #af52de;
+  --mac-green: #34c759;
+  --mac-orange: #ff9500;
+  --mac-red: #ff3b30;
+  --mac-yellow: #ffcc00;
+  --mac-cyan: #5ac8fa;
+
+  --ok: #34c759;
+  --warn: #ff9500;
+  --crit: #ff3b30;
+
+  --mac-shadow-window: 0 30px 80px -15px rgba(15, 23, 42, 0.16),
+                       0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+                       0 2px 6px rgba(15, 23, 42, 0.04);
+  --mac-shadow-card: 0 2px 10px -2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02);
+  --mac-shadow-hover: 0 10px 24px -4px rgba(15, 23, 42, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.03);
+
+  --radius-win: 22px;
+  --radius-card: 16px;
+  --radius-sm: 8px;
+  --radius-pill: 9999px;
+
+  --mono: "SF Mono", Monaco, "JetBrains Mono", Consolas, monospace;
+  --ease-apple: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* macOS 暗色模式 (Dark) */
+[data-theme="dark"] {
+  --mac-bg-desktop: #060911;
+  --mac-wall: radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.12) 0px, transparent 60%),
+              radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.12) 0px, transparent 60%),
+              radial-gradient(at 50% 100%, rgba(34, 197, 94, 0.08) 0px, transparent 60%);
+
+  --mac-window-bg: rgba(18, 24, 38, 0.82);
+  --mac-window-border: rgba(255, 255, 255, 0.12);
+  --mac-toolbar-bg: rgba(15, 20, 32, 0.82);
+  --mac-card-bg: rgba(23, 31, 48, 0.65);
+  --mac-sub-bg: rgba(30, 41, 64, 0.55);
+
+  --mac-border: rgba(255, 255, 255, 0.08);
+  --mac-border-sub: rgba(255, 255, 255, 0.05);
+
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+
+  --mac-blue: #0a84ff;
+  --mac-purple: #bf5af2;
+  --mac-green: #30d158;
+  --mac-orange: #ff9f0a;
+  --mac-red: #ff453a;
+  --mac-yellow: #ffd60a;
+  --mac-cyan: #64d2ff;
+
+  --ok: #30d158;
+  --warn: #ff9f0a;
+  --crit: #ff453a;
+
+  --mac-shadow-window: 0 40px 100px -20px rgba(0, 0, 0, 0.85),
+                       0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+  --mac-shadow-card: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --mac-shadow-hover: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* 基础重置 */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  background-color: var(--mac-bg-desktop);
+  background-image: var(--mac-wall);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "PingFang SC", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  transition: all 0.3s var(--ease-apple);
+}
+
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── macOS 桌面与视窗居中架构 ── */
+.macos-desktop {
+  min-height: 100vh;
+  padding: 30px 32px 50px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.macos-window {
+  width: 100%;
+  max-width: 1540px;
+  background: var(--mac-window-bg);
+  backdrop-filter: blur(40px) saturate(190%);
+  border: 1px solid var(--mac-window-border);
+  border-radius: var(--radius-win);
+  box-shadow: var(--mac-shadow-window);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s var(--ease-apple);
+}
+
+.macos-window.is-fullscreen {
+  max-width: 100%;
+  border-radius: 0;
+  border: none;
+  min-height: 100vh;
+}
+.macos-desktop:has(.macos-window.is-fullscreen) {
+  padding: 0;
+}
+
+/* ── 统一标题栏（Traffic Lights & Unified Toolbar） ── */
+.macos-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 20px;
+  background: var(--mac-toolbar-bg);
+  backdrop-filter: blur(25px);
+  border-bottom: 1px solid var(--mac-border);
+  user-select: none;
+}
+
+/* 红黄绿三色红绿灯控制钮 */
+.traffic-lights {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 12px;
+}
+.tl-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.5), 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.tl-btn.close {
+  background: #ff5f56;
+  border: 0.5px solid #e0443e;
+}
+.tl-btn.minimize {
+  background: #ffbd2e;
+  border: 0.5px solid #dea123;
+}
+.tl-btn.zoom {
+  background: #27c93f;
+  border: 0.5px solid #1aab29;
+}
+.traffic-lights:hover .tl-btn {
+  filter: brightness(1.05);
+}
+
+.window-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.win-title {
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.host-badge {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--mac-sub-bg);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--mac-border-sub);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 0 2px rgba(52, 199, 89, 0.3);
+  animation: mac-pulse 2.5s infinite var(--ease-apple);
+}
+.dot.off {
+  background: var(--crit);
+  box-shadow: 0 0 0 2px rgba(255, 59, 48, 0.3);
+  animation: none;
+}
+@keyframes mac-pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.titlebar-center {
+  display: flex;
+  align-items: center;
+}
+
+/* 苹果系统胶囊状态 */
+.macos-pill-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 14px;
+  background: var(--mac-sub-bg);
+  border: 1px solid var(--mac-border-sub);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  transition: all 0.25s var(--ease-apple);
+}
+.st-dot {
+  width: 6.5px;
+  height: 6.5px;
+  border-radius: 50%;
+  background: var(--ok);
+}
+.st-text { font-weight: 600; }
+.st-sep { color: var(--text-dim); }
+.st-sub { color: var(--text-muted); }
+.macos-pill-status.warn .st-dot { background: var(--warn); }
+.macos-pill-status.warn .st-text { color: var(--warn); }
+.macos-pill-status.crit .st-dot { background: var(--crit); }
+.macos-pill-status.crit .st-text { color: var(--crit); }
+
+.titlebar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* macOS 原生分段控制器 */
+.macos-segmented {
+  display: inline-flex;
+  padding: 2.5px;
+  background: var(--mac-sub-bg);
+  border: 1px solid var(--mac-border-sub);
+  border-radius: var(--radius-sm);
+  gap: 2px;
+}
+.macos-segmented button {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 3px 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.macos-segmented button:hover { color: var(--text); }
+.macos-segmented button.on {
+  background: var(--surface-solid, #ffffff);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+[data-theme="dark"] .macos-segmented button.on {
+  background: var(--mac-card-bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.window-actions {
+  display: flex;
+  gap: 6px;
+}
+.macos-icon-btn {
+  appearance: none;
+  background: var(--mac-sub-bg);
+  border: 1px solid var(--mac-border-sub);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s var(--ease-apple);
+}
+.macos-icon-btn:hover {
+  background: var(--mac-window-bg);
+  color: var(--text);
+  transform: translateY(-0.5px);
+}
+.proc-drawer-btn {
+  background: rgba(0, 122, 255, 0.1);
+  border-color: rgba(0, 122, 255, 0.25);
+  color: var(--mac-blue);
+  font-weight: 600;
+}
+.proc-drawer-btn:hover {
+  background: var(--mac-blue);
+  color: #ffffff;
+  border-color: var(--mac-blue);
+}
+.event-drawer-btn {
+  background: rgba(255, 149, 0, 0.1);
+  border-color: rgba(255, 149, 0, 0.25);
+  color: var(--mac-orange);
+  font-weight: 600;
+  position: relative;
+}
+.event-drawer-btn:hover {
+  background: var(--mac-orange);
+  color: #ffffff;
+  border-color: var(--mac-orange);
+}
+.event-badge-count {
+  font-size: 10px;
+  background: var(--mac-orange);
+  color: #ffffff;
+  border-radius: var(--radius-pill);
+  padding: 1px 6px;
+  font-family: var(--mono);
+  font-weight: 700;
+}
+.event-drawer-btn:hover .event-badge-count {
+  background: #ffffff;
+  color: var(--mac-orange);
+}
+.btn-activity-icon, .btn-event-icon {
+  font-size: 13px;
+}
+
+.macos-sys-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11.5px;
+}
+.uptime-tag {
+  color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.clock-tag {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ── 视窗内容主体：2×2 四宫格全景实时监控矩阵 ── */
+.macos-body {
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.macos-quad-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+.quad-card {
+  background: var(--mac-card-bg);
+  backdrop-filter: blur(35px) saturate(180%);
+  border: 1px solid var(--mac-border);
+  border-radius: var(--radius-card);
+  padding: 16px 20px 14px;
+  box-shadow: var(--mac-shadow-card);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  transition: all 0.25s var(--ease-apple);
+  position: relative;
+  overflow: hidden;
+}
+.quad-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--mac-shadow-hover);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+[data-theme="dark"] .quad-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.quad-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.qh-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.quad-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: 0 0 8px currentColor;
+}
+.qh-title-group {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.quad-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.quad-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.qh-right.m-val {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.quad-num {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--text);
+}
+.unit {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.quad-chart-wrap {
+  width: 100%;
+  height: 175px;
+  position: relative;
+}
+.chart.quad-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.quad-footer {
+  border-top: 1px solid var(--mac-border-sub);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.qf-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.qf-note {
+  font-weight: 400;
+}
+
+.quad-rows.rows {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px 14px;
+}
+
+.stage-footer-bar {
+  border-top: 1px solid var(--mac-border-sub);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s-foot-title {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.s-foot-title .note {
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+/* 4 核心分布网格 */
+.cores {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.core {
+  background: var(--mac-sub-bg);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.core-h {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.core-h b {
+  color: var(--text);
+  font-weight: 600;
+}
+.core-bar {
+  height: 2.5px;
+  border-radius: var(--radius-pill);
+  background: rgba(148, 163, 184, 0.2);
+  overflow: hidden;
+}
+.core-bar i {
+  display: block;
+  height: 100%;
+  background: var(--mac-blue);
+  transition: width 0.4s var(--ease-apple);
+}
+
+/* 行列表（内存细项 / 网络 / 磁盘） */
+.rows {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 20px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11.5px;
+  padding: 2px 0;
+}
+.r-k {
+  width: 76px;
+  flex: none;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.r-bar {
+  flex: 1;
+  height: 3.5px;
+  border-radius: var(--radius-pill);
+  background: rgba(148, 163, 184, 0.2);
+  overflow: hidden;
+  display: flex;
+}
+.r-bar i {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 0.4s;
+}
+.r-v {
+  width: 130px;
+  flex: none;
+  text-align: right;
+  font-weight: 600;
+}
+
+/* ── 底部双便当盒：macOS Activity 进程清单 + 系统事件 ── */
+.macos-bento-bottom {
+  display: grid;
+  grid-template-columns: 7.5fr 4.5fr;
+  gap: 14px;
+}
+
+.bento-box {
+  background: var(--mac-card-bg);
+  backdrop-filter: blur(25px);
+  border: 1px solid var(--mac-border);
+  border-radius: var(--radius-card);
+  padding: 16px 20px;
+  box-shadow: var(--mac-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bento-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--mac-border-sub);
+  padding-bottom: 8px;
+}
+.bt-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mac-app-icon { font-size: 14px; }
+.bt-heading {
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.mac-seg {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--mac-sub-bg);
+  border-radius: var(--radius-pill);
+  margin-left: 8px;
+}
+.mac-seg button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 2px 8px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.mac-seg button.on {
+  background: var(--surface-solid, #ffffff);
+  color: var(--text);
+  font-weight: 650;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+[data-theme="dark"] .mac-seg button.on {
+  background: var(--mac-card-bg);
+}
+
+.mac-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--mac-sub-bg);
+  border: 1px solid var(--mac-border-sub);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  transition: all 0.2s var(--ease-apple);
+}
+.mac-search:focus-within {
+  background: var(--surface-solid, #ffffff);
+  border-color: var(--mac-blue);
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+}
+.search-glass { font-size: 11px; color: var(--text-dim); }
+.mac-input {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 11px;
+  outline: none;
+  width: 140px;
+  font-family: inherit;
+}
+
+.mac-btn-sub {
+  appearance: none;
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.mac-btn-sub:hover { color: var(--text); text-decoration: underline; }
+
+.count-pill {
+  font-size: 11px;
+  color: var(--text-dim);
+  background: var(--mac-sub-bg);
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+}
+
+/* ── iStat Menus / CleanMyMac 极简原生资源消耗大户规范 ── */
+.istat-consumers {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.istat-row.prow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.015);
+  border: 1px solid transparent;
+  transition: all 0.18s var(--ease-apple);
+  cursor: default;
+}
+[data-theme="dark"] .istat-row.prow {
+  background: rgba(255, 255, 255, 0.02);
+}
+.istat-row.prow:hover {
+  background: rgba(0, 122, 255, 0.08);
+  border-color: rgba(0, 122, 255, 0.2);
+  transform: translateX(-2px);
+}
+[data-theme="dark"] .istat-row.prow:hover {
+  background: rgba(10, 132, 255, 0.15);
+  border-color: rgba(10, 132, 255, 0.3);
+}
+
+.istat-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+.istat-app-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--mac-sub-bg);
+  border: 1px solid var(--mac-border-sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.istat-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.istat-name-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.istat-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.istat-pid {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.istat-cmd-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 260px;
+}
+
+.istat-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+.istat-meter-track {
+  width: 80px;
+  height: 3.5px;
+  border-radius: var(--radius-pill);
+  background: rgba(148, 163, 184, 0.2);
+  overflow: hidden;
+}
+.istat-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--mac-blue);
+  transition: width 0.4s var(--ease-apple);
+}
+.istat-meter-fill.hot { background: var(--mac-red); }
+.istat-meter-fill.mem { background: var(--mac-purple); }
+
+.istat-val {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  width: 65px;
+  text-align: right;
+  letter-spacing: -0.2px;
+}
+.istat-val.hot { color: var(--mac-red); }
+
+/* 抽屉宽度适配 iStat Menus 紧凑质感 */
+.macos-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 490px;
+  max-width: 92vw;
+  background: var(--mac-window-bg);
+  backdrop-filter: blur(45px) saturate(200%);
+  border-left: 1px solid var(--mac-window-border);
+  box-shadow: -15px 0 40px rgba(0, 0, 0, 0.25);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.phead {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--mac-border-sub);
+  padding: 4px 10px 8px;
+  user-select: none;
+}
+.col-pid { font-family: var(--mono); }
+.col-cpu, .col-mem { text-align: right; }
+.col-sorted {
+  color: var(--mac-blue);
+  font-weight: 700;
+}
+
+.prow {
+  transition: all 0.15s ease;
+  background: rgba(0, 0, 0, 0.015);
+}
+[data-theme="dark"] .prow {
+  background: rgba(255, 255, 255, 0.02);
+}
+.prow:nth-child(even) {
+  background: transparent;
+}
+.prow:hover {
+  background: rgba(0, 122, 255, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+[data-theme="dark"] .prow:hover {
+  background: rgba(10, 132, 255, 0.14);
+}
+
+/* PID Pill */
+.p-pid {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  background: var(--mac-sub-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--mac-border-sub);
+  text-align: center;
+  display: inline-block;
+  width: fit-content;
+}
+
+/* 进程名与图标 */
+.p-proc-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+.p-icon {
+  font-size: 14px;
+  line-height: 1;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mac-sub-bg);
+  border-radius: 5px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.p-proc-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  line-height: 1.25;
+}
+.p-name {
+  font-weight: 650;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.p-user-tag {
+  font-size: 9.5px;
+  color: var(--text-dim);
+}
+
+/* 指标胶囊与动态微条 */
+.p-cell-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+.p-val {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+}
+.p-val.hot {
+  color: var(--mac-red);
+  font-weight: 750;
+}
+.p-meter {
+  width: 100%;
+  max-width: 70px;
+  height: 3.5px;
+  background: rgba(148, 163, 184, 0.18);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.p-meter i {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--mac-blue);
+  transition: width 0.3s ease;
+}
+.p-meter i.hot {
+  background: var(--mac-red);
+}
+.p-meter.mem i {
+  background: var(--mac-purple);
+}
+
+/* 命令代码条 */
+.p-cmd-wrap {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--mac-sub-bg);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--mac-border-sub);
+}
+
+/* 告警事件 */
+.alerts:empty { display: none; }
+.alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chip {
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 149, 0, 0.12);
+  color: var(--warn);
+  font-size: 11.5px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+}
+.chip.critical { background: rgba(255, 59, 48, 0.12); color: var(--crit); }
+
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: visible;
+}
+.ev {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--mac-sub-bg);
+  border-radius: var(--radius-sm);
+  border-left: 2.5px solid var(--warn);
+  font-size: 11px;
+}
+.ev.critical { border-left-color: var(--crit); }
+.ev.resolved { border-left-color: var(--ok); }
+.ev-t { font-weight: 600; }
+.ev-m { color: var(--text-dim); font-size: 10px; }
+
+.clear-notice {
+  padding: 10px;
+  color: var(--text-dim);
+  font-size: 11.5px;
+}
+
+/* ── 状态栏 ── */
+.macos-statusbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 32px;
+  padding: 0 20px;
+  background: var(--mac-toolbar-bg);
+  border-top: 1px solid var(--mac-border-sub);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.status-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.pulse-leaf {
+  color: var(--ok);
+  font-size: 8px;
+}
+.st-meta { display: none; }
+
+/* ── Toast 浮动提示 ── */
+.toasts {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  padding: 10px 16px;
+  background: var(--mac-window-bg);
+  backdrop-filter: blur(25px);
+  border: 1px solid var(--mac-border);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--mac-shadow-hover);
+  font-size: 12px;
+  animation: mac-slide-up 0.25s var(--ease-apple);
+}
+@keyframes mac-slide-up {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── macOS 原生双侧滑出抽屉系统 (Drawer System) ── */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.drawer-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.macos-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 490px;
+  max-width: 92vw;
+  background: var(--mac-window-bg);
+  backdrop-filter: blur(45px) saturate(200%);
+  border-left: 1px solid var(--mac-window-border);
+  box-shadow: -15px 0 40px rgba(0, 0, 0, 0.25);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.macos-drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--mac-border-sub);
+  background: var(--mac-toolbar-bg);
+  flex: none;
+}
+.dh-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dh-icon {
+  font-size: 16px;
+  background: rgba(0, 122, 255, 0.15);
+  color: var(--mac-blue);
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dh-icon.event-icon {
+  background: rgba(255, 149, 0, 0.15);
+  color: var(--mac-orange);
+}
+.dh-text {
+  display: flex;
+  flex-direction: column;
+}
+.dh-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.dh-sub {
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+
+.drawer-close-btn {
+  appearance: none;
+  background: var(--mac-sub-bg);
+  border: 1px solid var(--mac-border-sub);
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s var(--ease-apple);
+}
+.drawer-close-btn:hover {
+  background: rgba(255, 59, 48, 0.12);
+  color: var(--crit);
+  border-color: rgba(255, 59, 48, 0.3);
+}
+
+.drawer-toolbar {
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--mac-border-sub);
+  background: var(--mac-card-bg);
+  flex-wrap: wrap;
+  flex: none;
+}
+.event-toolbar {
+  justify-content: space-between;
+}
+.event-tb-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.event-dot-pulse {
+  color: var(--ok);
+  font-size: 9px;
+  animation: mac-pulse 2s infinite ease-in-out;
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px 24px;
+}
+.event-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+/* 兼容测试断言选择器 */
+.m-label { display: inline-block; }
+
+/* ── 响应式适配 ── */
+@media (max-width: 1200px) {
+  .macos-hero-deck { grid-template-columns: 1fr; }
+  .macos-widgets { grid-template-columns: repeat(2, 1fr); }
+  .macos-bento-bottom { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .macos-desktop { padding: 12px; }
+  .macos-window { border-radius: 14px; }
+  .macos-titlebar { flex-wrap: wrap; height: auto; padding: 10px 16px; gap: 10px; }
+  .macos-widgets { grid-template-columns: 1fr; }
+  .cores { grid-template-columns: repeat(2, 1fr); }
+  .rows { grid-template-columns: 1fr; }
+}

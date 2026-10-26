@@ -1,0 +1,4 @@
+# 监控看板服务依赖（容器内 pip 安装，宿主 python3.14 无 pip）
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30,<1.0
+psutil>=6.0,<8.0

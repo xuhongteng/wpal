@@ -1,0 +1,16 @@
+#!/bin/sh
+# Debian postrm
+set -e
+
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload >/dev/null 2>&1 || true
+fi
+
+# purge 时清理数据目录与配置
+if [ "$1" = "purge" ]; then
+    rm -rf /var/lib/wpal
+    rm -f /etc/wpal/config.yaml
+    rmdir /etc/wpal 2>/dev/null || true
+fi
+
+exit 0

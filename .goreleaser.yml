@@ -1,0 +1,237 @@
+# Wpal 发布配置
+#
+# 语法目标：goreleaser v2.7+（旧 schema 在新版 goreleaser 中同样有效）。
+# MSI 支持需要 goreleaser >= 2.8 的 wix 支持，届时把下方注释掉的
+# wix 段落打开即可（源码与 WiX 模板已放在 packaging/windows/）。
+version: 2
+
+project_name: wpal
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: wpal
+    main: ./cmd/wpal
+    binary: wpal
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X mon/internal/version.Version={{.Version}}
+      - -X mon/internal/version.Commit={{.FullCommit}}
+      - -X mon/internal/version.Date={{.Date}}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - "386"
+    ignore:
+      - goos: darwin
+        goarch: "386"
+      - goos: windows
+        goarch: "386"
+      - goos: windows
+        goarch: arm64
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: default
+    builds: [wpal]
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - README.md
+      - README.zh-CN.md
+      - LICENSE
+      - NOTICE
+      - CHANGELOG.md
+      - docs/*
+      - src: packaging/systemd/wpal.service
+        dst: systemd/wpal.service
+      - src: packaging/launchd/com.wpal.agent.plist
+        dst: launchd/com.wpal.agent.plist
+      - src: packaging/debian/*
+        dst: debian
+      - src: packaging/rpm/wpal.spec
+        dst: rpm/wpal.spec
+      - src: packaging/scripts/install.sh
+        dst: install.sh
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+sboms:
+  - artifacts: archive
+
+nfpms:
+  - id: wpal
+    builds: [wpal]
+    package_name: wpal
+    vendor: Wpal Contributors
+    homepage: https://github.com/wpal/wpal
+    maintainer: Wpal Contributors <maintainers@wpal.dev>
+    description: |
+      Lightweight, cross-platform server resource monitoring dashboard.
+      A single static binary with an embedded web UI, WebSocket live updates
+      and threshold alerting.
+    license: Apache-2.0
+    formats: [deb]
+    bindir: /usr/bin
+    section: admin
+    priority: optional
+    contents:
+      - src: packaging/systemd/wpal.service
+        dst: /lib/systemd/system/wpal.service
+      - src: packaging/debian/config.yaml
+        dst: /etc/wpal/config.yaml
+      - dst: /var/lib/wpal
+        type: dir
+        file_info:
+          mode: 0755
+
+    scripts:
+      postinstall: packaging/debian/postinst
+      preremove: packaging/debian/preremove
+      postremove: packaging/debian/postrm
+
+  - id: wpal-rpm
+    builds: [wpal]
+    package_name: wpal
+    vendor: Wpal Contributors
+    homepage: https://github.com/wpal/wpal
+    maintainer: Wpal Contributors <maintainers@wpal.dev>
+    description: |
+      Lightweight, cross-platform server resource monitoring dashboard.
+      A single static binary with an embedded web UI, WebSocket live updates
+      and threshold alerting.
+    license: Apache-2.0
+    formats: [rpm]
+    bindir: /usr/bin
+    section: admin
+    priority: optional
+    contents:
+      - src: packaging/systemd/wpal.service
+        dst: /lib/systemd/system/wpal.service
+      - src: packaging/debian/config.yaml
+        dst: /etc/wpal/config.yaml
+      - dst: /var/lib/wpal
+        type: dir
+        file_info:
+          mode: 0755
+    scripts:
+      postinstall: packaging/rpm/postinstall
+      preremove: packaging/rpm/preremove
+      postremove: packaging/rpm/postremove
+
+# MSI 安装包：需要 goreleaser >= 2.8（wix 支持）。
+# 启用时取消下面两段的注释，并把 packaging/windows/ 下的模板补齐。
+#
+# msix:
+#   - id: wpal
+#     builds: [wpal]
+#     publisher: Wpal
+#     publisher_display_name: Wpal Contributors
+#     application_id: Wpal.Wpal
+#     license: packaging/windows/LICENSE.rtf
+#
+# wix:
+#   - id: wpal
+#     builds: [wpal]
+#     name: Wpal
+#     guid: 7C1B9E2A-4F3D-4A6B-9E1C-8D5F2A7B3C10
+#     license: packaging/windows/LICENSE.rtf
+#     product_name: Wpal
+#     manufacturer: Wpal Contributors
+#     version: "{{ .Version }}"
+#     upgrade_code: 1E5A2C74-9B3D-4E8A-A1F6-2C7D8B4E9A31
+#     output: wpal.msi
+#     source: wix
+#     description: Lightweight, cross-platform server resource monitoring dashboard.
+#     ui: default
+#     components:
+#       - path: "{{ .Binary }}"
+#       - path: packaging/windows/config.yaml
+#         dest: ProgramData\Wpal\config.yaml
+#       - path: packaging/windows/wpal.xml
+#         dest: ProgramData\Wpal\wpal.xml
+
+dockers:
+  - id: amd64
+    ids: [wpal]
+    goos: linux
+    goarch: amd64
+    dockerfile: Dockerfile
+    use: buildx
+    image_templates:
+      - "ghcr.io/wpal/wpal:{{ .Version }}-amd64"
+      - "ghcr.io/wpal/wpal:latest-amd64"
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.licenses=Apache-2.0"
+
+  - id: arm64
+    ids: [wpal]
+    goos: linux
+    goarch: arm64
+    dockerfile: Dockerfile
+    use: buildx
+    image_templates:
+      - "ghcr.io/wpal/wpal:{{ .Version }}-arm64"
+      - "ghcr.io/wpal/wpal:latest-arm64"
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.licenses=Apache-2.0"
+
+docker_manifests:
+  - name_template: "ghcr.io/wpal/wpal:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/wpal/wpal:{{ .Version }}-amd64"
+      - "ghcr.io/wpal/wpal:{{ .Version }}-arm64"
+  - name_template: "ghcr.io/wpal/wpal:latest"
+    image_templates:
+      - "ghcr.io/wpal/wpal:latest-amd64"
+      - "ghcr.io/wpal/wpal:latest-arm64"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  footer: |
+    ## 安装
+
+    ```bash
+    # Linux
+    curl -fsSL https://raw.githubusercontent.com/wpal/wpal/main/packaging/scripts/install.sh | sh
+
+    # macOS
+    brew install wpal
+
+    # Windows
+    winget install wpal
+    ```
+
+    完整说明见 [README.zh-CN.md](https://github.com/wpal/wpal/blob/main/README.zh-CN.md)。

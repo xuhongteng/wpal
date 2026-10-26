@@ -1,0 +1,43 @@
+# 服务器资源监控看板编排
+#
+# 架构：
+#   浏览器 → 宿主 nginx(/monitor/) → 127.0.0.1:8899 → 本 compose 的 monitor 容器
+#
+# 容器视角：
+#   pid: host        → /proc 可见宿主任一进程，CPU/内存/进程榜是宿主真实数据
+#   network_mode:host→ /proc/net 是宿主网络命名空间，TCP 状态统计真实连接
+#   /:/host/root:ro  → 读取宿主真实挂载表（分区容量、inode）
+#
+# 服务只监听 127.0.0.1:8899，公网出口一律走宿主 nginx。
+
+services:
+  monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: monitor:latest
+    container_name: monitor
+    restart: unless-stopped
+    pid: host
+    network_mode: host
+    volumes:
+      # SQLite 历史库持久化在宿主
+      - ./data:/app/data
+      # 宿主根目录只读挂载：取真实挂载表与磁盘容量
+      # （-v 是 rbind，子挂载 /boot/efi 等会一并带进来，分区容量可准确计量）
+      - /:/host/root:ro
+    environment:
+      MON_HOST_ROOT: /host/root
+      MON_DATA_DIR: /app/data
+      MON_SAMPLE_INTERVAL: "1"
+      MON_PERSIST_INTERVAL: "10"
+      MON_RETENTION_DAYS: "7"
+      MON_TOP_PROCESSES: "15"
+      MON_VIRTUAL_NICS: "0"
+      MON_HOST_LABEL: "${MON_HOST_LABEL:-}"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8891/api/health',timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

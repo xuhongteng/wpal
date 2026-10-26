@@ -1,0 +1,13 @@
+#!/bin/sh
+# RPM postinstall
+set -e
+
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload >/dev/null 2>&1 || true
+    systemctl enable wpal.service >/dev/null 2>&1 || true
+    if [ "$1" = "1" ]; then
+        systemctl try-restart wpal.service >/dev/null 2>&1 || true
+    fi
+fi
+
+exit 0

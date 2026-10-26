@@ -1,0 +1,27 @@
+# wpal 默认配置（Windows）
+
+server:
+  # 默认只监听回环地址；对外暴露请用 IIS / nginx 反代
+  listen: "127.0.0.1:8891"
+  base_path: ""
+
+collect:
+  interval: 1s
+  include_virtual_nics: false
+  top_processes: 15
+  host_root: ""
+  label: ""
+
+history:
+  enabled: true
+  retain: 168h
+  persist_interval: 10s
+  data_dir: "C:\\ProgramData\\Wpal\\data"
+
+alerts:
+  cpu:    { warn: 80,  crit: 93, hold: 30s, recover: 20s }
+  memory: { warn: 85,  crit: 94, hold: 20s, recover: 20s }
+  swap:   { warn: 50,  crit: 85, hold: 60s, recover: 30s }
+  disk:   { warn: 80,  crit: 90, hold: 60s, recover: 60s }
+  inode:  { warn: 85,  crit: 95, hold: 60s, recover: 60s }
+  load:   { warn: 1.5, crit: 3.0, hold: 45s, recover: 30s }
