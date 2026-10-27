@@ -81,7 +81,7 @@ nfpms:
     builds: [wpal]
     package_name: wpal
     vendor: Wpal Contributors
-    homepage: https://github.com/wpal/wpal
+    homepage: https://github.com/xuhongteng/wpal
     maintainer: Wpal Contributors <maintainers@wpal.dev>
     description: |
       Lightweight, cross-platform server resource monitoring dashboard.
@@ -111,7 +111,7 @@ nfpms:
     builds: [wpal]
     package_name: wpal
     vendor: Wpal Contributors
-    homepage: https://github.com/wpal/wpal
+    homepage: https://github.com/xuhongteng/wpal
     maintainer: Wpal Contributors <maintainers@wpal.dev>
     description: |
       Lightweight, cross-platform server resource monitoring dashboard.
@@ -176,8 +176,8 @@ dockers:
     dockerfile: Dockerfile
     use: buildx
     image_templates:
-      - "ghcr.io/wpal/wpal:{{ .Version }}-amd64"
-      - "ghcr.io/wpal/wpal:latest-amd64"
+      - "ghcr.io/xuhongteng/wpal:{{ .Version }}-amd64"
+      - "ghcr.io/xuhongteng/wpal:latest-amd64"
     build_flag_templates:
       - "--platform=linux/amd64"
       - "--label=org.opencontainers.image.title={{ .ProjectName }}"
@@ -192,8 +192,8 @@ dockers:
     dockerfile: Dockerfile
     use: buildx
     image_templates:
-      - "ghcr.io/wpal/wpal:{{ .Version }}-arm64"
-      - "ghcr.io/wpal/wpal:latest-arm64"
+      - "ghcr.io/xuhongteng/wpal:{{ .Version }}-arm64"
+      - "ghcr.io/xuhongteng/wpal:latest-arm64"
     build_flag_templates:
       - "--platform=linux/arm64"
       - "--label=org.opencontainers.image.title={{ .ProjectName }}"
@@ -202,14 +202,14 @@ dockers:
       - "--label=org.opencontainers.image.licenses=Apache-2.0"
 
 docker_manifests:
-  - name_template: "ghcr.io/wpal/wpal:{{ .Version }}"
+  - name_template: "ghcr.io/xuhongteng/wpal:{{ .Version }}"
     image_templates:
-      - "ghcr.io/wpal/wpal:{{ .Version }}-amd64"
-      - "ghcr.io/wpal/wpal:{{ .Version }}-arm64"
-  - name_template: "ghcr.io/wpal/wpal:latest"
+      - "ghcr.io/xuhongteng/wpal:{{ .Version }}-amd64"
+      - "ghcr.io/xuhongteng/wpal:{{ .Version }}-arm64"
+  - name_template: "ghcr.io/xuhongteng/wpal:latest"
     image_templates:
-      - "ghcr.io/wpal/wpal:latest-amd64"
-      - "ghcr.io/wpal/wpal:latest-arm64"
+      - "ghcr.io/xuhongteng/wpal:latest-amd64"
+      - "ghcr.io/xuhongteng/wpal:latest-arm64"
 
 changelog:
   sort: asc
@@ -225,7 +225,7 @@ release:
 
     ```bash
     # Linux
-    curl -fsSL https://raw.githubusercontent.com/wpal/wpal/main/packaging/scripts/install.sh | sh
+    curl -fsSL https://raw.githubusercontent.com/xuhongteng/wpal/main/packaging/scripts/install.sh | sh
 
     # macOS
     brew install wpal
@@ -234,4 +234,4 @@ release:
     winget install wpal
     ```
 
-    完整说明见 [README.zh-CN.md](https://github.com/wpal/wpal/blob/main/README.zh-CN.md)。
+    完整说明见 [README.zh-CN.md](https://github.com/xuhongteng/wpal/blob/main/README.zh-CN.md)。

@@ -465,7 +465,11 @@
     // CPU 象限
     const cpuPct = Math.min(100, Math.max(0, cpu.total || 0));
     animateNumber($('cpu-val'), cpuPct, 0);
-    if ($('cpu-sub')) $('cpu-sub').textContent = `负载: ${nf(cpu.load1, 2)} / ${nf(cpu.load5, 2)} · ${cpu.cores || 0}核`;
+    if ($('cpu-sub')) {
+      $('cpu-sub').textContent = t('quad.cpu.sub', {
+        l1: nf(cpu.load1, 2), l5: nf(cpu.load5, 2), cores: cpu.cores || 0,
+      });
+    }
 
     // 内存 象限
     const memPct = Math.min(100, Math.max(0, mem.percent || 0));
@@ -476,7 +480,11 @@
     const worst = parts.length ? parts.reduce((a, b) => (b.percent > a.percent ? b : a)) : null;
     const diskPct = worst ? Math.min(100, Math.max(0, worst.percent)) : 0;
     animateNumber($('disk-val'), diskPct, 0);
-    if ($('disk-sub')) $('disk-sub').textContent = worst ? `${worst.mount} · 剩 ${bytes(worst.free)}` : '存储正常';
+    if ($('disk-sub')) {
+      $('disk-sub').textContent = worst
+        ? t('quad.disk.sub', { mount: worst.mount, free: bytes(worst.free) })
+        : '—';
+    }
 
     // 网络 象限
     const rx = ifs.reduce((a, i) => a + i.rx_bps, 0);
@@ -573,7 +581,7 @@
     const box = $('disk-rows');
     if (!box) return;
     box.innerHTML = parts.map((p) =>
-      rowHTML(p.mount, p.percent, 'var(--disk)', `${nf(p.percent, 1)}% · 剩 ${bytes(p.free)}`)
+      rowHTML(p.mount, p.percent, 'var(--disk)', t('quad.disk.row', { pct: nf(p.percent, 1), free: bytes(p.free) }))
     ).join('') || `<div class="clear-notice">${t('empty.data')}</div>`;
     const ios = (s.disk || {}).io || [];
     const top = ios[0];
@@ -740,6 +748,9 @@
     });
     document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
       el.setAttribute('placeholder', t(el.dataset.i18nPh));
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+      el.setAttribute('title', t(el.dataset.i18nTitle));
     });
     document.title = t('app.title');
     const langLabel = $('lang-label');

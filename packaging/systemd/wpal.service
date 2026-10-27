@@ -1,6 +1,6 @@
 [Unit]
 Description=Wpal - lightweight server resource monitoring dashboard
-Documentation=https://github.com/wpal/wpal
+Documentation=https://github.com/xuhongteng/wpal
 After=network.target
 
 [Service]

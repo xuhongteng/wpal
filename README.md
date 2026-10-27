@@ -6,8 +6,8 @@
 
 [![Go](https://img.shields.io/badge/go-1.23%2B-00ADD8E?logo=go&logoColor=white)](https://go.dev)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![CI](https://github.com/wpal/wpal/actions/workflows/ci.yml/badge.svg)](https://github.com/wpal/wpal/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/wpal/wpal)](https://goreportcard.com/report/github.com/wpal/wpal)
+[![CI](https://github.com/xuhongteng/wpal/actions/workflows/ci.yml/badge.svg)](https://github.com/xuhongteng/wpal/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/xuhongteng/wpal)](https://goreportcard.com/report/github.com/xuhongteng/wpal)
 [![Security](https://img.shields.io/badge/security-policy-blue.svg)](SECURITY.md)
 
 [English](README.md) · [简体中文](README.zh-CN.md)
@@ -20,11 +20,6 @@ Wpal is a server monitoring dashboard that ships as **a single static binary**.
 Copy it to any Linux, macOS or Windows machine, run it, and you get a live
 dashboard in the browser — no Python, no Node, no container runtime, no database.
 
-```
- CPU 16%   Memory 61%   Disk 51%   Network 0.44 MB/s
- System normal — every metric is within threshold
-```
-
 | | |
 |---|---|
 | **Binary size** | 7 MB (all platforms, static, no cgo) |
@@ -34,18 +29,6 @@ dashboard in the browser — no Python, no Node, no container runtime, no databa
 | **Refresh** | 1 s sampling, streamed over WebSocket |
 
 ---
-
-## Design principles
-
-| Principle | How |
-|---|---|
-| **Colour is a signal, not decoration** | Everything is greyscale while healthy; amber `#f59e0b` / red `#f87171` appear only when a metric crosses a threshold, green `#34d399` only for "resolved" |
-| **Conclusion first** | The first line is the verdict plus four big numbers; details sink into *Trends → Resource detail → Processes → Alerts* |
-| **No boxes** | Whitespace and 1px hairlines do the grouping — no borders, shadows or gradients |
-| **Numbers are the hero** | Key metrics at 46px; charts and tables stay in the background |
-| **Restrained motion** | Value roll-up, change highlight, pulse at the end of a sparkline — nothing that fights the numbers |
-
-A screen with no colour while everything is fine makes the one thing that *is* wrong impossible to miss.
 
 ## Features
 
@@ -61,9 +44,9 @@ A screen with no colour while everything is fine makes the one thing that *is* w
 
 ## Screenshots
 
-| Live view | History replay |
-|---|---|
-| ![Live](docs/images/dashboard-light.png) | ![History](docs/images/dashboard-history.png) |
+| Live | Dark | English | History replay |
+|---|---|---|---|
+| ![Live](docs/images/dashboard-light.png) | ![Dark](docs/images/dashboard-dark.png) | ![English](docs/images/dashboard-en.png) | ![History](docs/images/dashboard-history.png) |
 
 ---
 
@@ -72,7 +55,7 @@ A screen with no colour while everything is fine makes the one thing that *is* w
 ### Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wpal/wpal/main/packaging/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/xuhongteng/wpal/main/packaging/scripts/install.sh | sh
 ```
 
 Or from a release tarball:
@@ -110,7 +93,7 @@ docker run -d --name wpal \
   --pid host --network host \
   -v wpal-data:/data \
   -v /:/host/root:ro \
-  ghcr.io/wpal/wpal
+  ghcr.io/xuhongteng/wpal
 ```
 
 `--pid host` and `--network host` let the container observe the *host's*
@@ -119,7 +102,7 @@ processes and interfaces; the read-only `/` mount gives it the real mount table.
 ### Packages
 
 `.deb`, `.rpm` and `.tar.gz`/`.zip` archives are attached to every
-[release](https://github.com/wpal/wpal/releases), together with
+[release](https://github.com/xuhongteng/wpal/releases), together with
 SHA256 checksums and an SBOM.
 
 A Windows MSI installer is also supported — its WiX template lives in
@@ -160,8 +143,8 @@ alerts:
   load:   { warn: 1.5, crit: 3.0, hold: 45s, recover: 30s }
 ```
 
-Every value can also be set via environment variable (`LITESIGHT_LISTEN`,
-`LITESIGHT_DATA_DIR`, …) or command line flag. See
+Every value can also be set via environment variable (`WPAL_LISTEN`,
+`WPAL_DATA_DIR`, …) or command line flag. See
 [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
 ---
@@ -209,7 +192,7 @@ whole snapshot.
 ## Build from source
 
 ```bash
-git clone https://github.com/wpal/wpal.git
+git clone https://github.com/xuhongteng/wpal.git
 cd wpal
 make build      # ./bin/wpal
 make test       # unit tests

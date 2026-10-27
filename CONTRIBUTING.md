@@ -10,7 +10,7 @@ propose changes, and what we expect from a pull request.
 ## Quick start
 
 ```bash
-git clone https://github.com/wpal/wpal.git
+git clone https://github.com/xuhongteng/wpal.git
 cd wpal
 make build      # compile to ./bin/wpal
 make test       # unit tests

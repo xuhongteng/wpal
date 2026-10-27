@@ -6,8 +6,8 @@
 
 [![Go](https://img.shields.io/badge/go-1.23%2B-00ADD8E?logo=go&logoColor=white)](https://go.dev)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![CI](https://github.com/wpal/wpal/actions/workflows/ci.yml/badge.svg)](https://github.com/wpal/wpal/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/wpal/wpal)](https://goreportcard.com/report/github.com/wpal/wpal)
+[![CI](https://github.com/xuhongteng/wpal/actions/workflows/ci.yml/badge.svg)](https://github.com/xuhongteng/wpal/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/xuhongteng/wpal)](https://goreportcard.com/report/github.com/xuhongteng/wpal)
 [![Security](https://img.shields.io/badge/security-policy-blue.svg)](SECURITY.md)
 
 [English](README.md) · [简体中文](README.zh-CN.md)
@@ -20,11 +20,6 @@ Wpal 是一个服务器监控看板，交付形态是**一个静态二进制文�
 把它拷到任意 Linux / macOS / Windows 机器上直接跑，浏览器里就有实时看板——
 不需要 Python、不需要 Node、不需要容器运行时、不需要数据库。
 
-```
- CPU 16%   内存 61%   磁盘 51%   网络 0.44 MB/s
- 系统正常 —— 全部指标处于阈值内
-```
-
 | | |
 |---|---|
 | **二进制体积** | 7 MB（全平台，静态链接，无 cgo） |
@@ -34,18 +29,6 @@ Wpal 是一个服务器监控看板，交付形态是**一个静态二进制文�
 | **刷新** | 每秒采样一次，WebSocket 推送 |
 
 ---
-
-## 设计原则
-
-| 原则 | 做法 |
-|---|---|
-| **颜色是信号，不是装饰** | 正常状态一律灰阶、整屏无彩色；只有指标越线才出现琥珀 `#f59e0b` / 红 `#f87171`，绿色 `#34d399` 只用于"已恢复" |
-| **结论先行** | 首屏第一行就是系统状态判定 + 四个关键指标的大数字，细节按「趋势 → 资源明细 → 进程 → 告警」下沉 |
-| **不用卡片框住东西** | 靠留白与 1px 细线分区，去掉边框、阴影、渐变等一切装饰 |
-| **数字是主角** | 关键指标 46px 等宽数字；图表与表格退到背景层 |
-| **克制的动效** | 数值滚动 + 变化高亮 + 趋势线末端脉冲；无动画干扰读数 |
-
-正常时整屏无彩色，一眼能扫出谁越线 —— 彩色若常驻，就等于没有信号。
 
 ## 特性
 
@@ -61,9 +44,9 @@ Wpal 是一个服务器监控看板，交付形态是**一个静态二进制文�
 
 ## 截图
 
-| 实时视图 | 历史回看 |
-|---|---|
-| ![实时](docs/images/dashboard-light.png) | ![历史](docs/images/dashboard-history.png) |
+| 实时视图 | 暗色模式 | 英文界面 | 历史回看 |
+|---|---|---|---|
+| ![实时](docs/images/dashboard-light.png) | ![暗色](docs/images/dashboard-dark.png) | ![英文](docs/images/dashboard-en.png) | ![历史](docs/images/dashboard-history.png) |
 
 ---
 
@@ -72,7 +55,7 @@ Wpal 是一个服务器监控看板，交付形态是**一个静态二进制文�
 ### Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wpal/wpal/main/packaging/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/xuhongteng/wpal/main/packaging/scripts/install.sh | sh
 ```
 
 或从发布页下载压缩包：
@@ -109,7 +92,7 @@ docker run -d --name wpal \
   --pid host --network host \
   -v wpal-data:/data \
   -v /:/host/root:ro \
-  ghcr.io/wpal/wpal
+  ghcr.io/xuhongteng/wpal
 ```
 
 `--pid host` 与 `--network host` 让容器能看到**宿主机**的进程与网卡；
@@ -117,7 +100,7 @@ docker run -d --name wpal \
 
 ### 安装包
 
-每个[发布](https://github.com/wpal/wpal/releases)都附带
+每个[发布](https://github.com/xuhongteng/wpal/releases)都附带
 `.deb`、`.rpm` 以及 `.tar.gz`/`.zip`，同时提供 SHA256 校验和与 SBOM。
 
 Windows 的 MSI 安装包同样受支持——WiX 模板在 `packaging/windows/`，
@@ -157,7 +140,7 @@ alerts:
   load:   { warn: 1.5, crit: 3.0, hold: 45s, recover: 30s }
 ```
 
-所有配置项也可用环境变量（`LITESIGHT_LISTEN`、`LITESIGHT_DATA_DIR` …）
+所有配置项也可用环境变量（`WPAL_LISTEN`、`WPAL_DATA_DIR` …）
 或命令行参数覆盖，详见 [docs/CONFIGURATION.md](docs/CONFIGURATION.md)。
 
 ---
@@ -204,7 +187,7 @@ alerts:
 ## 从源码构建
 
 ```bash
-git clone https://github.com/wpal/wpal.git
+git clone https://github.com/xuhongteng/wpal.git
 cd wpal
 make build      # 产出 ./bin/wpal
 make test       # 单元测试

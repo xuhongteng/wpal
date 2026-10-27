@@ -39,4 +39,4 @@ so the disk usage never grows beyond the configured retention period.
 
 Documentation
 -------------
-https://github.com/wpal/wpal
+https://github.com/xuhongteng/wpal

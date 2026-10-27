@@ -23,7 +23,7 @@ Wpal 以**单个静态二进制**的形式分发。挑一个适合你平台的�
 ### 一键安装
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wpal/wpal/main/packaging/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/xuhongteng/wpal/main/packaging/scripts/install.sh | sh
 ```
 
 脚本会把二进制装到 `/usr/local/bin/wpal`，创建 `wpal` 系统用户，
@@ -34,7 +34,7 @@ curl -fsSL https://raw.githubusercontent.com/wpal/wpal/main/packaging/scripts/in
 ```bash
 VERSION=1.0.0
 ARCH=amd64   # 或 arm64 / 386
-curl -fsSLO "https://github.com/wpal/wpal/releases/download/v${VERSION}/wpal_${VERSION}_linux_${ARCH}.tar.gz"
+curl -fsSLO "https://github.com/xuhongteng/wpal/releases/download/v${VERSION}/wpal_${VERSION}_linux_${ARCH}.tar.gz"
 tar -xzf "wpal_${VERSION}_linux_${ARCH}.tar.gz"
 
 sudo install -m 0755 wpal /usr/local/bin/wpal
@@ -44,7 +44,7 @@ wpal
 ### Debian / Ubuntu（.deb）
 
 ```bash
-curl -fsSLO "https://github.com/wpal/wpal/releases/download/v1.0.0/wpal_1.0.0_linux_amd64.deb"
+curl -fsSLO "https://github.com/xuhongteng/wpal/releases/download/v1.0.0/wpal_1.0.0_linux_amd64.deb"
 sudo dpkg -i wpal_1.0.0_linux_amd64.deb
 sudo systemctl enable --now wpal
 ```
@@ -87,7 +87,7 @@ wpal
 ```bash
 VERSION=1.0.0
 ARCH=arm64   # 或 amd64
-curl -fsSLO "https://github.com/wpal/wpal/releases/download/v${VERSION}/wpal_${VERSION}_darwin_${ARCH}.tar.gz"
+curl -fsSLO "https://github.com/xuhongteng/wpal/releases/download/v${VERSION}/wpal_${VERSION}_darwin_${ARCH}.tar.gz"
 tar -xzf "wpal_${VERSION}_darwin_${ARCH}.tar.gz"
 sudo install -m 0755 wpal /usr/local/bin/wpal
 ```
@@ -146,7 +146,7 @@ docker run -d --name wpal \
   --pid host --network host \
   -v wpal-data:/data \
   -v /:/host/root:ro \
-  ghcr.io/wpal/wpal
+  ghcr.io/xuhongteng/wpal
 ```
 
 或用 compose：

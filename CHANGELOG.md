@@ -41,5 +41,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Platform metrics that do not exist (inode on macOS/Windows, steal time on
   non-Linux) are reported as `0` instead of failing the snapshot.
 
-[Unreleased]: https://github.com/wpal/wpal/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/wpal/wpal/releases/tag/v1.0.0
+[Unreleased]: https://github.com/xuhongteng/wpal/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/xuhongteng/wpal/releases/tag/v1.0.0

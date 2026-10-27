@@ -9,7 +9,7 @@ Release:        1%{?dist}
 Summary:        Lightweight server resource monitoring dashboard
 
 License:        Apache-2.0
-URL:            https://github.com/wpal/wpal
+URL:            https://github.com/xuhongteng/wpal
 Source0:        %{name}_%{version}_%{os}_%{arch}.tar.gz
 
 BuildArch:      %{_arch}

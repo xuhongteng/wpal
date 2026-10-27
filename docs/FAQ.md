@@ -11,7 +11,7 @@ it with `--pid host --network host` and mount the host root read-only:
 
 ```bash
 docker run -d --pid host --network host -v /:/host/root:ro -v data:/data \
-  --entrypoint /wpal ghcr.io/wpal/wpal \
+  --entrypoint /wpal ghcr.io/xuhongteng/wpal \
   --listen 127.0.0.1:8891 --data-dir /data --host-root /host/root
 ```
 

@@ -2,18 +2,18 @@
 # wpal 一键安装脚本（Linux / macOS）
 #
 # 用法：
-#   curl -fsSL https://raw.githubusercontent.com/wpal/wpal/main/packaging/scripts/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/xuhongteng/wpal/main/packaging/scripts/install.sh | sh
 #
 # 环境变量：
-#   LITESIGHT_VERSION   指定版本（默认最新 release）
-#   LITESIGHT_PREFIX    安装前缀（默认 /usr/local）
-#   LITESIGHT_REPO      GitHub 仓库（默认 wpal/wpal）
+#   WPAL_VERSION   指定版本（默认最新 release）
+#   WPAL_PREFIX    安装前缀（默认 /usr/local）
+#   WPAL_REPO      GitHub 仓库（默认 xuhongteng/wpal）
 
 set -eu
 
-REPO="${LITESIGHT_REPO:-wpal/wpal}"
-PREFIX="${LITESIGHT_PREFIX:-/usr/local}"
-VERSION="${LITESIGHT_VERSION:-latest}"
+REPO="${WPAL_REPO:-xuhongteng/wpal}"
+PREFIX="${WPAL_PREFIX:-/usr/local}"
+VERSION="${WPAL_VERSION:-latest}"
 
 case "$(uname -s)" in
     Linux)  OS=linux ;;

@@ -24,7 +24,7 @@ platform; every method ends with the same thing — one process listening on
 ### One-liner
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wpal/wpal/main/packaging/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/xuhongteng/wpal/main/packaging/scripts/install.sh | sh
 ```
 
 The script installs the binary to `/usr/local/bin/wpal`, creates a
@@ -36,7 +36,7 @@ systemd unit.
 ```bash
 VERSION=1.0.0
 ARCH=amd64   # or arm64 / 386
-curl -fsSLO "https://github.com/wpal/wpal/releases/download/v${VERSION}/wpal_${VERSION}_linux_${ARCH}.tar.gz"
+curl -fsSLO "https://github.com/xuhongteng/wpal/releases/download/v${VERSION}/wpal_${VERSION}_linux_${ARCH}.tar.gz"
 tar -xzf "wpal_${VERSION}_linux_${ARCH}.tar.gz"
 
 sudo install -m 0755 wpal /usr/local/bin/wpal
@@ -46,7 +46,7 @@ wpal
 ### Debian / Ubuntu (.deb)
 
 ```bash
-curl -fsSLO "https://github.com/wpal/wpal/releases/download/v1.0.0/wpal_1.0.0_linux_amd64.deb"
+curl -fsSLO "https://github.com/xuhongteng/wpal/releases/download/v1.0.0/wpal_1.0.0_linux_amd64.deb"
 sudo dpkg -i wpal_1.0.0_linux_amd64.deb
 sudo systemctl enable --now wpal
 ```
@@ -90,7 +90,7 @@ Or manually:
 ```bash
 VERSION=1.0.0
 ARCH=arm64   # or amd64
-curl -fsSLO "https://github.com/wpal/wpal/releases/download/v${VERSION}/wpal_${VERSION}_darwin_${ARCH}.tar.gz"
+curl -fsSLO "https://github.com/xuhongteng/wpal/releases/download/v${VERSION}/wpal_${VERSION}_darwin_${ARCH}.tar.gz"
 tar -xzf "wpal_${VERSION}_darwin_${ARCH}.tar.gz"
 sudo install -m 0755 wpal /usr/local/bin/wpal
 ```
@@ -150,7 +150,7 @@ docker run -d --name wpal \
   --pid host --network host \
   -v wpal-data:/data \
   -v /:/host/root:ro \
-  ghcr.io/wpal/wpal
+  ghcr.io/xuhongteng/wpal
 ```
 
 or with compose:

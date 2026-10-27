@@ -15,7 +15,7 @@ Security fixes are released for the latest minor version only.
 
 Report privately via GitHub's security advisory form:
 
-> https://github.com/wpal/wpal/security/advisories/new
+> https://github.com/xuhongteng/wpal/security/advisories/new
 
 or email `security@wpal.dev`.
 

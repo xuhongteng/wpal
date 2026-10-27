@@ -39,15 +39,15 @@ Wpal 零配置即可运行。本页列出所有可调项。
 
 | 变量 | 对应配置 |
 |---|---|
-| `LITESIGHT_LISTEN` | `server.listen` |
-| `LITESIGHT_BASE_PATH` | `server.base_path` |
-| `LITESIGHT_INTERVAL` | `collect.interval` |
-| `LITESIGHT_DATA_DIR` | `history.data_dir` |
-| `LITESIGHT_RETAIN` | `history.retain` |
-| `LITESIGHT_HOST_ROOT` | `collect.host_root` |
-| `LITESIGHT_LABEL` | `collect.label` |
-| `LITESIGHT_TOP_PROCESSES` | `collect.top_processes` |
-| `LITESIGHT_VIRTUAL_NICS` | `collect.include_virtual_nics` |
+| `WPAL_LISTEN` | `server.listen` |
+| `WPAL_BASE_PATH` | `server.base_path` |
+| `WPAL_INTERVAL` | `collect.interval` |
+| `WPAL_DATA_DIR` | `history.data_dir` |
+| `WPAL_RETAIN` | `history.retain` |
+| `WPAL_HOST_ROOT` | `collect.host_root` |
+| `WPAL_LABEL` | `collect.label` |
+| `WPAL_TOP_PROCESSES` | `collect.top_processes` |
+| `WPAL_VIRTUAL_NICS` | `collect.include_virtual_nics` |
 
 ---
 

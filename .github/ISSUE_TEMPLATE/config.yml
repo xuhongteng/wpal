@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: Question or usage help
-    url: https://github.com/wpal/wpal/discussions
+    url: https://github.com/xuhongteng/wpal/discussions
     about: Ask how to configure or deploy Wpal.
   - name: Security vulnerability
-    url: https://github.com/wpal/wpal/security/advisories/new
+    url: https://github.com/xuhongteng/wpal/security/advisories/new
     about: Please report vulnerabilities privately (see SECURITY.md).
