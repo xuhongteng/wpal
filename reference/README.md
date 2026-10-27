@@ -1,6 +1,6 @@
 # 参考实现（Python）
 
-`python-impl/` 是 Litesight 的**参考实现**，用于跨实现验证：
+`python-impl/` 是 Wpal 的**参考实现**，用于跨实现验证：
 
 - `tools/compare.py` 用它作为基准，逐字段比对 Go 采集器的输出；
 - `tools/verify_web.py` + `tools/compare_shots.py` 用**运行中的**参考实例

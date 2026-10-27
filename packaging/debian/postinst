@@ -17,7 +17,7 @@ if [ -d /run/systemd/system ]; then
     systemctl daemon-reload || true
     systemctl enable wpal.service >/dev/null 2>&1 || true
     # 升级时不自动重启，避免用户正在看面板时被中断
-    if [ "$1" = "configure" ] && [ -z "${LITESIGHT_NO_START:-}" ]; then
+    if [ "$1" = "configure" ] && [ -z "${WPAL_NO_START:-}" ]; then
         systemctl try-restart wpal.service >/dev/null 2>&1 || true
     fi
 fi

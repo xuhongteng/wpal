@@ -64,13 +64,38 @@ func TestEnvOverridesFile(t *testing.T) {
 	if err := os.WriteFile(path, []byte("server:\n  listen: \"1.2.3.4:1\"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("LITESIGHT_LISTEN", "127.0.0.1:8888")
+	t.Setenv("WPAL_LISTEN", "127.0.0.1:8888")
 	c, err := Load(path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if c.Server.Listen != "127.0.0.1:8888" {
 		t.Errorf("环境变量应覆盖文件，得到 %s", c.Server.Listen)
+	}
+}
+
+// 老名字 LITESIGHT_* 仍然可用，保证改名后旧部署不被打断。
+func TestLegacyEnvFallback(t *testing.T) {
+	t.Setenv("LITESIGHT_LISTEN", "127.0.0.1:8889")
+	c, err := Load("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Server.Listen != "127.0.0.1:8889" {
+		t.Errorf("旧环境变量应继续生效，得到 %s", c.Server.Listen)
+	}
+}
+
+// WPAL_* 优先于 LITESIGHT_*。
+func TestEnvPrefersWpalOverLegacy(t *testing.T) {
+	t.Setenv("LITESIGHT_LISTEN", "127.0.0.1:8889")
+	t.Setenv("WPAL_LISTEN", "127.0.0.1:8890")
+	c, err := Load("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Server.Listen != "127.0.0.1:8890" {
+		t.Errorf("WPAL_* 应优先，得到 %s", c.Server.Listen)
 	}
 }
 

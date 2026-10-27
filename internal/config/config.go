@@ -102,6 +102,8 @@ func Load(path string) (Config, error) {
 
 func (c *Config) applyEnv() {
 	getEnv := func(k string) string {
+		// WPAL_* 是当前规范名；LITESIGHT_* 是改名之前的老名字，
+		// 保留为兼容回退，老环境变量仍然可用。
 		if v := os.Getenv("WPAL_" + k); v != "" {
 			return v
 		}
