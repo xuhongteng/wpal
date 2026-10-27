@@ -45,10 +45,10 @@ builds:
 archives:
   - id: default
     builds: [wpal]
-    format: tar.gz
+    formats: [tar.gz]
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
     files:
@@ -168,49 +168,8 @@ nfpms:
 #       - path: packaging/windows/wpal.xml
 #         dest: ProgramData\Wpal\wpal.xml
 
-dockers:
-  - id: amd64
-    ids: [wpal]
-    goos: linux
-    goarch: amd64
-    dockerfile: Dockerfile
-    use: buildx
-    image_templates:
-      - "ghcr.io/xuhongteng/wpal:{{ .Version }}-amd64"
-      - "ghcr.io/xuhongteng/wpal:latest-amd64"
-    build_flag_templates:
-      - "--platform=linux/amd64"
-      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
-      - "--label=org.opencontainers.image.version={{ .Version }}"
-      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
-      - "--label=org.opencontainers.image.licenses=Apache-2.0"
-
-  - id: arm64
-    ids: [wpal]
-    goos: linux
-    goarch: arm64
-    dockerfile: Dockerfile
-    use: buildx
-    image_templates:
-      - "ghcr.io/xuhongteng/wpal:{{ .Version }}-arm64"
-      - "ghcr.io/xuhongteng/wpal:latest-arm64"
-    build_flag_templates:
-      - "--platform=linux/arm64"
-      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
-      - "--label=org.opencontainers.image.version={{ .Version }}"
-      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
-      - "--label=org.opencontainers.image.licenses=Apache-2.0"
-
-docker_manifests:
-  - name_template: "ghcr.io/xuhongteng/wpal:{{ .Version }}"
-    image_templates:
-      - "ghcr.io/xuhongteng/wpal:{{ .Version }}-amd64"
-      - "ghcr.io/xuhongteng/wpal:{{ .Version }}-arm64"
-  - name_template: "ghcr.io/xuhongteng/wpal:latest"
-    image_templates:
-      - "ghcr.io/xuhongteng/wpal:latest-amd64"
-      - "ghcr.io/xuhongteng/wpal:latest-arm64"
-
+# 容器镜像由 .github/workflows/release.yml 的独立 docker job 统一构建与推送
+# （多架构 + GHCR 登录需要显式 setup-buildx，这里不做重复实现）
 changelog:
   sort: asc
   filters:
