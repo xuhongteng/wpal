@@ -32,9 +32,12 @@ jobs:
           version: v1.62.2
           args: --timeout=5m
       - name: actionlint (workflow schema)
-        # 不传 args：actionlint 无参数时会自动扫描 .github/workflows。
-        # docker:// action 不会经过 shell，glob 不会被展开。
-        uses: docker://rhysd/actionlint:1.7.7
+        # 不用 docker://rhysd/actionlint：容器以非 root 运行，读不到挂载的
+        # 工作区（permission denied），且无参数时找不到 Go 工程根目录。
+        # 直接用 setup-go 装好的 Go 工具链安装固定版本，最稳。
+        run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+          "$(go env GOPATH)/bin/actionlint"
 
   test:
     name: Test (${{ matrix.os }})
