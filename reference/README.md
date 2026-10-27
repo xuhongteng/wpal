@@ -21,7 +21,7 @@
 docker compose -f reference/python-impl/docker-compose.yml up -d
 
 # 2) 与 Go 版逐字段比对
-python3 tools/compare.py --python http://127.0.0.1:8893 --go ./bin/litesight
+python3 tools/compare.py --python http://127.0.0.1:8893 --go ./bin/wpal
 ```
 
 ## 口径说明

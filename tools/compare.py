@@ -12,7 +12,7 @@
    窗口拉长后两侧的统计量自然收敛，可以真正暴露解析逻辑差异。
 
 用法：
-    python3 tools/compare.py [--python http://127.0.0.1:8891] [--go ./bin/litesight] [--samples 10]
+    python3 tools/compare.py [--python http://127.0.0.1:8891] [--go ./bin/wpal] [--samples 10]
 """
 from __future__ import annotations
 
@@ -221,7 +221,7 @@ def compare_snapshots(go_last, py_last, go_win, py_win):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--python", default="http://127.0.0.1:8891")
-    ap.add_argument("--go", default="./bin/litesight")
+    ap.add_argument("--go", default="./bin/wpal")
     ap.add_argument("--samples", type=int, default=10)
     ap.add_argument("--window", type=int, default=8, help="参与均值计算的尾部帧数")
     args = ap.parse_args()

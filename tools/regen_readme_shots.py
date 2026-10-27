@@ -1,7 +1,9 @@
 from playwright.sync_api import sync_playwright
+import pathlib
 import time
 
-OUT = "/litesight/docs/images"
+REPO = pathlib.Path(__file__).resolve().parent.parent
+OUT = str(REPO / "docs" / "images")
 
 with sync_playwright() as p:
     browser = p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage"])
