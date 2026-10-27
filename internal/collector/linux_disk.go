@@ -55,8 +55,8 @@ func (c *linuxCollector) collectPartitions() []Partition {
 		if !ok {
 			continue
 		}
-		maj, min := majorMinor(uint64(sys.Dev))
-		if majMin := itoa(maj) + ":" + itoa(min); majMin != e.majMin {
+		maj, minor := majorMinor(sys.Dev)
+		if majMin := itoa(maj) + ":" + itoa(minor); majMin != e.majMin {
 			// 该挂载点位于独立文件系统，bind 挂载的宿主根里量不到，跳过
 			continue
 		}
@@ -85,8 +85,8 @@ func (c *linuxCollector) collectPartitions() []Partition {
 		if totalUser > 0 {
 			pct = float64(used) / float64(totalUser) * 100
 		}
-		inodeTotal := uint64(fs.Files)
-		inodeFree := uint64(fs.Ffree)
+		inodeTotal := fs.Files
+		inodeFree := fs.Ffree
 		inodePct := 0.0
 		if inodeTotal > 0 {
 			inodePct = float64(inodeTotal-inodeFree) / float64(inodeTotal) * 100

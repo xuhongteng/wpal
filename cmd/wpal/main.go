@@ -34,6 +34,14 @@ import (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+// run 是真正的入口，返回进程退出码。
+//
+// 这里刻意不让 main 直接 os.Exit：采集器用 defer 关闭，
+// 在 main 里直接退出会让 defer 跳过，句柄泄漏。
+func run() int {
 	var (
 		cfgPath  = flag.String("config", "", "配置文件路径（YAML）")
 		showVer  = flag.Bool("version", false, "打印版本信息并退出")
@@ -52,13 +60,13 @@ func main() {
 
 	if *showVer {
 		fmt.Println(version.Get().String())
-		return
+		return 0
 	}
 
 	cfg, err := config.Load(*cfgPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "配置错误: %v\n", err)
-		os.Exit(1)
+		return 1
 	}
 	// 命令行覆盖配置文件
 	if *listen != "" {
@@ -91,15 +99,16 @@ func main() {
 	if *dump || *dumpAll {
 		if err := runDump(col, *dump, *dumpAll, *repeat, *interval); err != nil {
 			fmt.Fprintf(os.Stderr, "采集失败: %v\n", err)
-			os.Exit(1)
+			return 1
 		}
-		return
+		return 0
 	}
 
 	if err := runServer(cfg, col); err != nil {
 		fmt.Fprintf(os.Stderr, "启动失败: %v\n", err)
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 // runDump 执行一次或多次采样并输出 JSON。

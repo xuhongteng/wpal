@@ -23,8 +23,13 @@ linters-settings:
       - diagnostic
       - style
     disabled-checks:
+      # 以下检查属于纯风格偏好，与本项目写法不符，统一关闭。
       - ifElseChain
-      - hugeParam
+      - unnamedResult
+      - tooManyResultsChecker
+      - paramTypeCombine
+      - unlambda
+      - evalOrder
   revive:
     rules:
       - name: exported

@@ -76,7 +76,8 @@ func (s *Sampler) Run(ctx context.Context) {
 
 			// 落盘（按需降频）
 			if s.ring != nil && now.Sub(lastPersist) >= s.persist {
-				s.ring.Append(toSample(snap))
+				// 写盘失败只影响历史回看，不应中断实时流。
+				_ = s.ring.Append(toSample(snap))
 				lastPersist = now
 			}
 

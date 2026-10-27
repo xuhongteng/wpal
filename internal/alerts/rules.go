@@ -66,7 +66,7 @@ func DefaultRules() []Rule {
 			Label: "磁盘使用率", LabelKey: "alert.disk",
 			Warn: 80, Crit: 90, Unit: "%",
 			Hold: 60 * time.Second, Recover: 60 * time.Second,
-			Extract: func(s *collector.Snapshot) float64 { return maxPartitionPercent(s) },
+			Extract: maxPartitionPercent,
 			Detail: func(s *collector.Snapshot) string {
 				return i18n.Detail("alert.disk.detail", map[string]any{"mount": maxPartitionMount(s)})
 			},
@@ -79,7 +79,7 @@ func DefaultRules() []Rule {
 			Label: "inode 使用率", LabelKey: "alert.inode",
 			Warn: 85, Crit: 95, Unit: "%",
 			Hold: 60 * time.Second, Recover: 60 * time.Second,
-			Extract: func(s *collector.Snapshot) float64 { return maxInodePercent(s) },
+			Extract: maxInodePercent,
 			Detail: func(s *collector.Snapshot) string {
 				return i18n.Detail("alert.disk.detail", map[string]any{"mount": maxPartitionMount(s)})
 			},
@@ -110,31 +110,31 @@ func DefaultRules() []Rule {
 }
 
 func maxPartitionPercent(s *collector.Snapshot) float64 {
-	max := 0.0
+	peak := 0.0
 	for _, p := range s.Disk.Partitions {
-		if p.Percent > max {
-			max = p.Percent
+		if p.Percent > peak {
+			peak = p.Percent
 		}
 	}
-	return max
+	return peak
 }
 
 func maxInodePercent(s *collector.Snapshot) float64 {
-	max := 0.0
+	peak := 0.0
 	for _, p := range s.Disk.Partitions {
-		if p.InodePercent > max {
-			max = p.InodePercent
+		if p.InodePercent > peak {
+			peak = p.InodePercent
 		}
 	}
-	return max
+	return peak
 }
 
 func maxPartitionMount(s *collector.Snapshot) string {
 	mount := ""
-	max := -1.0
+	peak := -1.0
 	for _, p := range s.Disk.Partitions {
-		if p.Percent > max {
-			max = p.Percent
+		if p.Percent > peak {
+			peak = p.Percent
 			mount = p.Mount
 		}
 	}

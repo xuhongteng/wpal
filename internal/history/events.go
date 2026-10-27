@@ -67,7 +67,8 @@ func (e *EventStore) Add(ev collector.Event) collector.Event {
 	e.nextID++
 	line, err := json.Marshal(ev)
 	if err == nil {
-		e.file.Write(append(line, '\n'))
+		// 落盘失败不应影响内存里的事件记录。
+		_, _ = e.file.Write(append(line, '\n'))
 	}
 	e.items = append(e.items, ev)
 	if len(e.items) > e.limit {

@@ -174,28 +174,20 @@ func (s *Server) handleHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 预先按样本数分配容量，避免循环里反复扩容。
+	n := len(samples)
 	var (
-		ts      []int64
-		cpu     []float32
-		mem     []float32
-		memUsed []float64
-		swap    []float32
-		load1   []float32
-		percore [][]float32
-		brk     []map[string]float64
-		net     []map[string][]float64
-		diskio  []map[string][]float64
+		ts      = make([]int64, 0, n)
+		cpu     = make([]float32, 0, n)
+		mem     = make([]float32, 0, n)
+		memUsed = make([]float64, 0, n)
+		swap    = make([]float32, 0, n)
+		load1   = make([]float32, 0, n)
+		percore = make([][]float32, 0, n)
+		brk     = make([]map[string]float64, 0, n)
+		net     = make([]map[string][]float64, 0, n)
+		diskio  = make([]map[string][]float64, 0, n)
 	)
-	ts = []int64{}
-	cpu = []float32{}
-	mem = []float32{}
-	memUsed = []float64{}
-	swap = []float32{}
-	load1 = []float32{}
-	percore = [][]float32{}
-	brk = []map[string]float64{}
-	net = []map[string][]float64{}
-	diskio = []map[string][]float64{}
 
 	for _, sm := range samples {
 		ts = append(ts, sm.TS)

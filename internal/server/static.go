@@ -147,7 +147,7 @@ func (h *staticHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Encoding", "gzip")
 	w.Header().Set("Vary", "Accept-Encoding")
 	w.Header().Set("Content-Length", itoa(len(a.body)))
-	w.Write(a.body)
+	_, _ = w.Write(a.body)
 }
 
 // serveIndex 输出首页，并把 __BUILD__ 占位符替换成内容指纹。
@@ -169,7 +169,7 @@ func (h *staticHandler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Encoding", "gzip")
 	w.Header().Set("Vary", "Accept-Encoding")
 	w.Header().Set("Content-Length", itoa(len(body)))
-	w.Write(body)
+	_, _ = w.Write(body)
 }
 
 // decompress 用于取回原始文本（首页需要替换占位符后再压缩）。

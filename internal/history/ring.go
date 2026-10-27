@@ -60,7 +60,6 @@ type Ring struct {
 	head   uint64
 	mem    []Sample
 	memCap int
-	dirty  bool
 }
 
 // Open 打开（必要时创建）环形文件。

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"nhooyr.io/websocket"
+	"github.com/coder/websocket"
 )
 
 // wsHandler 负责把采样帧推送给浏览器。

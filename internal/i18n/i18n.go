@@ -65,14 +65,14 @@ func render(tpl string, params map[string]any) string {
 	return out
 }
 
-func replaceAll(s, old, new string) string {
+func replaceAll(s, old, repl string) string {
 	out := ""
 	for {
 		i := indexOf(s, old)
 		if i < 0 {
 			return out + s
 		}
-		out += s[:i] + new
+		out += s[:i] + repl
 		s = s[i+len(old):]
 	}
 }

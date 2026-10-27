@@ -5,8 +5,6 @@
 // 以保证旧前端仍可工作。
 package collector
 
-import "time"
-
 // Snapshot 是一次采样的完整快照。
 type Snapshot struct {
 	TS       float64 `json:"ts"`
@@ -219,6 +217,3 @@ func New(opts Options) Collector {
 	}
 	return newCollector(opts)
 }
-
-// nowFunc 便于测试注入时钟。
-var nowFunc = time.Now
