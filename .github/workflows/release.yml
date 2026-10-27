@@ -41,7 +41,7 @@ jobs:
         run: |
           SYFT_BIN="${{ steps.syft.outputs.cmd }}"
           if [ -x "$SYFT_BIN" ]; then
-            echo "$(dirname "$SYFT_BIN")" >> "$GITHUB_PATH"
+            printf '%s\n' "$(dirname "$SYFT_BIN")" >> "$GITHUB_PATH"
             echo "syft 已就绪: $SYFT_BIN"
           else
             echo "::warning::syft 未就绪，SBOM 生成可能被跳过"
