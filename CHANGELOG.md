@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-01-01
+## [1.0.0] - 2026-10-27
 
 ### Added
 
@@ -26,13 +26,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API surface: `/api/health`, `/api/snapshot`, `/api/history`, `/api/events`,
   `/api/procs`, `WS /ws/stream`.
 - Packaging for Linux (`.deb`, `.rpm`, tarball, systemd unit), macOS (tarball,
-  launchd agent, Homebrew formula), Windows (`.msi`, `.zip`, service
-  registration helper) and Docker.
+  launchd agent), Windows (`.zip`, service registration helper) and Docker.
 - `curl | sh` installer for Linux and macOS.
-- CI: lint, race-enabled tests on Linux/macOS/Windows, cross-compile matrix
-  with a 12 MB binary size budget, CodeQL scanning.
+- CI: lint, tests on Linux/macOS/Windows, cross-compile matrix with a 12 MB
+  binary size budget, actionlint workflow validation, CodeQL scanning.
 - Field-level verification scripts comparing the collector against a reference
   implementation, plus screenshot-level front-end comparison.
+
+### Interface
+
+- macOS 27 Retina inspired dashboard: unified title bar with traffic-light
+  window controls, frosted-glass cards, and a light/dark theme that follows the
+  system appearance.
+- 2x2 live quadrant matrix — CPU (per-core breakdown), memory & swap, network
+  throughput and disk I/O all stream on one screen, no tab switching required.
+- On-demand drawers instead of permanent panels: a top-resource-consumer list in
+  the style of iStat Menus, and a notification-centre style alert/event stream.
+- Environment variables are prefixed `WPAL_*`; the pre-rename `LITESIGHT_*`
+  names still work as a fallback.
 
 ### Notes
 
