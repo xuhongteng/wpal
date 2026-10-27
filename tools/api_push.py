@@ -10,6 +10,7 @@ import os
 import pathlib
 import subprocess
 import sys
+import time
 import urllib.request
 
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
@@ -19,29 +20,47 @@ API = f"https://api.github.com/repos/{REPO}"
 
 def api(method, path, payload=None):
     data = json.dumps(payload).encode() if payload is not None else None
-    req = urllib.request.Request(
-        API + path,
-        data=data,
-        method=method,
-        headers={
-            "Authorization": f"token {TOKEN}",
-            "Accept": "application/vnd.github.v3+json",
-            "Content-Type": "application/json",
-            "User-Agent": "wpal-push",
-        },
-    )
-    with urllib.request.urlopen(req, timeout=120) as r:
-        body = r.read().decode()
-    return json.loads(body) if body else {}
+    last = None
+    # 网络抖动时自动重试，避免一次 RemoteDisconnected 就整个失败。
+    for attempt in range(5):
+        req = urllib.request.Request(
+            API + path,
+            data=data,
+            method=method,
+            headers={
+                "Authorization": f"token {TOKEN}",
+                "Accept": "application/vnd.github.v3+json",
+                "Content-Type": "application/json",
+                "User-Agent": "wpal-push",
+            },
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=180) as r:
+                body = r.read().decode()
+            return json.loads(body) if body else {}
+        except urllib.error.HTTPError:
+            raise
+        except Exception as e:  # 网络类错误：重试
+            last = e
+            time.sleep(2 * (attempt + 1))
+    raise last
 
 
 def main():
-    base_sha = sys.argv[1]
-    commit_sha = sys.argv[2]
+    # GitHub 的 Git Data API 只接受完整 40 位 SHA，短 SHA 会返回 422。
+    diff_base = subprocess.run(
+        ["git", "rev-parse", sys.argv[1]], capture_output=True, text=True, check=True,
+    ).stdout.strip()
+    commit_sha = subprocess.run(
+        ["git", "rev-parse", sys.argv[2]], capture_output=True, text=True, check=True,
+    ).stdout.strip()
+    # 第三个参数是远端已存在的父提交（用 API 推送时，本地可能没有这个对象）。
+    # 省略时默认与 diff 基准相同。
+    base_sha = sys.argv[3] if len(sys.argv) > 3 else diff_base
 
-    # 读取 base..commit 之间所有变更文件
+    # 读取 diff_base..commit 之间所有变更文件
     out = subprocess.run(
-        ["git", "diff", "--name-status", base_sha, commit_sha],
+        ["git", "diff", "--name-status", diff_base, commit_sha],
         capture_output=True, text=True, check=True,
     ).stdout.strip()
 
@@ -50,10 +69,22 @@ def main():
         if not line.strip():
             continue
         status, path = line.split("\t", 1)
-        mode = subprocess.run(
+        if status.startswith("D"):
+            # 删除：必须显式给出 sha=null，否则 base_tree 里的旧文件会留在新 tree 里。
+            entries.append({
+                "path": path,
+                "mode": "100644",
+                "type": "blob",
+                "sha": None,
+            })
+            print(f"del  {path}")
+            continue
+
+        ls = subprocess.run(
             ["git", "ls-tree", commit_sha, "--", path],
             capture_output=True, text=True, check=True,
-        ).stdout.split()[0]
+        ).stdout.split()
+        mode = ls[0] if ls else "100644"
 
         raw = pathlib.Path(path).read_bytes()
         blob = api("POST", "/git/blobs", {
