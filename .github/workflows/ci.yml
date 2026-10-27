@@ -32,9 +32,9 @@ jobs:
           version: v1.62.2
           args: --timeout=5m
       - name: actionlint (workflow schema)
+        # 不传 args：actionlint 无参数时会自动扫描 .github/workflows。
+        # docker:// action 不会经过 shell，glob 不会被展开。
         uses: docker://rhysd/actionlint:1.7.7
-        with:
-          args: .github/workflows/*.yml
 
   test:
     name: Test (${{ matrix.os }})
