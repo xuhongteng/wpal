@@ -84,8 +84,7 @@ nfpms:
     homepage: https://github.com/xuhongteng/wpal
     maintainer: Wpal Contributors <maintainers@wpal.dev>
     description: |
-      轻量级跨平台服务器资源监控看板：单个静态二进制内嵌 Web 看板，
-      WebSocket 实时推送，并内置阈值告警。
+      轻量级跨平台服务器资源监控看板，单个静态二进制、零运行时依赖。
     license: Apache-2.0
     formats: [deb]
     bindir: /usr/bin
@@ -113,8 +112,7 @@ nfpms:
     homepage: https://github.com/xuhongteng/wpal
     maintainer: Wpal Contributors <maintainers@wpal.dev>
     description: |
-      轻量级跨平台服务器资源监控看板：单个静态二进制内嵌 Web 看板，
-      WebSocket 实时推送，并内置阈值告警。
+      轻量级跨平台服务器资源监控看板，单个静态二进制、零运行时依赖。
     license: Apache-2.0
     formats: [rpm]
     bindir: /usr/bin

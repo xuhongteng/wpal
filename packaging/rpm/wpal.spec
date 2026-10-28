@@ -18,8 +18,7 @@ Requires(pre):  systemd
 
 %description
 Wpal 是一款轻量级、跨平台的服务器资源监控看板。
-它以单个静态二进制交付，内嵌 Web 看板，通过 WebSocket 实时推送指标，
-历史数据保存在有界的环形文件里，阈值告警直接呈现在看板上。
+单个静态二进制交付，零运行时依赖。
 
 %prep
 %setup -q

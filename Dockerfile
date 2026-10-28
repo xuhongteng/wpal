@@ -40,7 +40,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} \
 FROM scratch
 
 LABEL org.opencontainers.image.title="Wpal" \
-      org.opencontainers.image.description="Wpal - 轻量级跨平台服务器资源监控看板：单个静态二进制、零运行时依赖。" \
+      org.opencontainers.image.description="Wpal - 轻量级跨平台服务器资源监控看板，单个静态二进制、零运行时依赖。" \
       org.opencontainers.image.source="https://github.com/xuhongteng/wpal" \
       org.opencontainers.image.licenses="Apache-2.0"
 
