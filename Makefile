@@ -36,7 +36,7 @@ all: build
 
 ## build: 编译当前平台二进制
 build:
-	@mkdir -p bin
+	@mkdir -p bin $(GOTMPDIR)
 	go build -trimpath -ldflags "$(LDFLAGS)" -o $(BIN) $(PKG)
 	@ls -lh $(BIN)
 
