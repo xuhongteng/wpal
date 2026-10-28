@@ -7,6 +7,7 @@ package sampler
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"sync"
 	"time"
 
@@ -29,8 +30,11 @@ type Sampler struct {
 	rawJSON []byte
 
 	subMu sync.Mutex
-	subs  map[int]chan []byte
+	subs  map[int]*Subscriber
 	nextS int
+
+	// coreTruncWarned 保证「逐核数超过历史存储上限」只告警一次。
+	coreTruncWarned bool
 }
 
 // New 创建采样器。
@@ -45,7 +49,7 @@ func New(col collector.Collector, interval, persist time.Duration,
 	return &Sampler{
 		col: col, interval: interval, persist: persist,
 		ring: ring, events: events, engine: engine,
-		subs: map[int]chan []byte{},
+		subs: map[int]*Subscriber{},
 	}
 }
 
@@ -65,6 +69,13 @@ func (s *Sampler) Run(ctx context.Context) {
 				continue
 			}
 			now := time.Now()
+
+			// 逐核数超过历史存储能力时明确告警一次，避免逐核序列被静默截断
+			if !s.coreTruncWarned && s.ring != nil && snap.CPU.Cores > history.MaxPerCore {
+				s.coreTruncWarned = true
+				log.Printf("提示: 本机 %d 个逻辑核超过历史存储上限 %d，逐核历史只保留前 %d 个（实时帧不受影响）",
+					snap.CPU.Cores, history.MaxPerCore, history.MaxPerCore)
+			}
 
 			// 告警判定
 			events := s.engine.Update(snap, now)
@@ -107,44 +118,90 @@ func (s *Sampler) LatestJSON() []byte {
 	return s.rawJSON
 }
 
-// Subscribe 订阅广播流，返回订阅 id 与接收通道。
-func (s *Sampler) Subscribe() (int, chan []byte) {
+// Subscriber 是单个客户端的一帧订阅。
+//
+// 只保留「最新一帧」的语义：新帧覆盖未取走的旧帧，
+// 因此慢客户端不会把整条链路拖慢，也永远不会反压采样循环。
+// 相比原来的有界通道，这里由接收方独占取帧，
+// 不存在「发送端把发给客户端的帧自己消费掉」的怪异行为。
+type Subscriber struct {
+	mu     sync.Mutex
+	frame  []byte
+	notify chan struct{}
+	closed chan struct{}
+	once   sync.Once
+}
+
+// set 覆盖为最新帧并唤醒等待者；已有未处理的唤醒信号时直接复用。
+func (s *Subscriber) set(frame []byte) {
+	s.mu.Lock()
+	s.frame = frame
+	s.mu.Unlock()
+	select {
+	case s.notify <- struct{}{}:
+	default:
+	}
+}
+
+// Take 取走最新帧；没有新帧时返回 nil。
+func (s *Subscriber) Take() []byte {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	f := s.frame
+	s.frame = nil
+	return f
+}
+
+// Notify 在有待取帧时收到信号。
+func (s *Subscriber) Notify() <-chan struct{} { return s.notify }
+
+// Closed 在订阅被取消时关闭。
+func (s *Subscriber) Closed() <-chan struct{} { return s.closed }
+
+func (s *Subscriber) close() {
+	s.once.Do(func() { close(s.closed) })
+}
+
+// Subscribe 订阅广播流，返回订阅 id 与订阅句柄。
+func (s *Sampler) Subscribe() (int, *Subscriber) {
 	s.subMu.Lock()
 	defer s.subMu.Unlock()
 	id := s.nextS
 	s.nextS++
-	ch := make(chan []byte, 4)
-	s.subs[id] = ch
-	return id, ch
+	sub := &Subscriber{
+		notify: make(chan struct{}, 1),
+		closed: make(chan struct{}),
+	}
+	s.subs[id] = sub
+	return id, sub
 }
 
 // Unsubscribe 取消订阅。
 func (s *Sampler) Unsubscribe(id int) {
 	s.subMu.Lock()
-	defer s.subMu.Unlock()
-	if ch, ok := s.subs[id]; ok {
+	sub, ok := s.subs[id]
+	if ok {
 		delete(s.subs, id)
-		close(ch)
+	}
+	s.subMu.Unlock()
+	if ok {
+		sub.close()
 	}
 }
 
-// broadcast 把一帧数据发给所有订阅者。通道满时丢弃旧数据（保实时性）。
+// broadcast 把最新一帧塞给所有订阅者。
+//
+// 这里先把订阅者快照成切片再逐个 set，避免在持锁期间唤醒客户端。
 func (s *Sampler) broadcast(raw []byte) {
 	s.subMu.Lock()
-	defer s.subMu.Unlock()
-	for _, ch := range s.subs {
-		select {
-		case ch <- raw:
-		default:
-			select {
-			case <-ch:
-			default:
-			}
-			select {
-			case ch <- raw:
-			default:
-			}
-		}
+	subs := make([]*Subscriber, 0, len(s.subs))
+	for _, sub := range s.subs {
+		subs = append(subs, sub)
+	}
+	s.subMu.Unlock()
+
+	for _, sub := range subs {
+		sub.set(raw)
 	}
 }
 

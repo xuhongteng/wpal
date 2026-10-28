@@ -8,19 +8,22 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+
+	"mon/internal/sampler"
 )
 
 // wsHandler 负责把采样帧推送给浏览器。
 //
 // 浏览器通过 /ws/stream 建立连接，之后每秒收到一帧 JSON。
-// 服务端不做写缓冲：客户端消费不过来时丢弃旧帧，保证实时性。
+// 服务端只保留每个客户端的最新一帧：消费不过来时旧帧直接被覆盖，
+// 既保证实时性，也不会反压采样循环。
 type wsHandler struct {
 	sampler samplerSource
 }
 
 // samplerSource 是 WebSocket 需要的最小采样器接口，便于测试替身注入。
 type samplerSource interface {
-	Subscribe() (int, chan []byte)
+	Subscribe() (int, *sampler.Subscriber)
 	Unsubscribe(int)
 	LatestJSON() []byte
 }
@@ -62,19 +65,26 @@ func (h *wsHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 		_ = conn.Write(ctx, websocket.MessageText, raw)
 	}
 
-	id, ch := h.sampler.Subscribe()
+	id, sub := h.sampler.Subscribe()
 	defer h.sampler.Unsubscribe(id)
 
-	// 写协程与心跳保活
+	// 写协程与心跳保活。
+	//
+	// 任何异常退出都必须 cancel()：否则读循环会一直阻塞在 conn.Read(ctx)，
+	// 直到 TCP 层自己超时才发现连接已死，白白拖住一个 goroutine 和一条连接。
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
+		defer cancel()
+
 		pingTicker := time.NewTicker(30 * time.Second)
 		defer pingTicker.Stop()
 
 		for {
 			select {
 			case <-ctx.Done():
+				return
+			case <-sub.Closed():
 				return
 			case <-pingTicker.C:
 				pingCtx, pingCancel := context.WithTimeout(ctx, 5*time.Second)
@@ -83,12 +93,13 @@ func (h *wsHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					return
 				}
-			case msg, ok := <-ch:
-				if !ok {
-					return
+			case <-sub.Notify():
+				frame := sub.Take()
+				if frame == nil {
+					continue
 				}
 				writeCtx, writeCancel := context.WithTimeout(ctx, 5*time.Second)
-				err := conn.Write(writeCtx, websocket.MessageText, msg)
+				err := conn.Write(writeCtx, websocket.MessageText, frame)
 				writeCancel()
 				if err != nil {
 					return
@@ -97,10 +108,10 @@ func (h *wsHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// 读循环：等待感知客户端断开（移除错误的 60s 读超时，避免无业务帧时人为掐断长连接）
+	// 读循环：只为感知客户端断开（浏览器不会发业务消息）。
+	// 不设超时——浏览器本来就不发帧，设超时只会人为掐断健康的长连接。
 	for {
-		_, _, err := conn.Read(ctx)
-		if err != nil {
+		if _, _, err := conn.Read(ctx); err != nil {
 			break
 		}
 	}

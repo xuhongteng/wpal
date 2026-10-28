@@ -121,3 +121,29 @@ func TestHistoryCapacity(t *testing.T) {
 		t.Errorf("容量估算不对: %d", n)
 	}
 }
+
+// TestThresholdDisabledSkipsValidation 验证显式关闭的规则不再强制校验阈值，
+// 允许用户用 enabled: false 关掉不关心的告警。
+func TestThresholdDisabledSkipsValidation(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	// swap 规则只写 enabled: false，不给 warn/crit
+	body := `alerts:
+  swap:
+    enabled: false
+`
+	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+		t.Fatalf("写配置失败: %v", err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("关闭的规则不应导致校验失败: %v", err)
+	}
+	if cfg.Alerts.Swap.IsEnabled() {
+		t.Fatal("swap 规则应处于关闭状态")
+	}
+	// 未显式配置的规则默认启用
+	if !cfg.Alerts.CPU.IsEnabled() {
+		t.Fatal("未配置 enabled 的规则应默认启用")
+	}
+}

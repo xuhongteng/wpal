@@ -20,12 +20,20 @@ import (
 )
 
 const (
-	headerSize   = 32
-	recordSize   = 344
-	magic        = "LITESGT1"
-	version      = 1
-	perCoreSlots = 64
+	headerSize = 32
+	// 单条记录 = TS(8) + CPU/Mem/Swap/Load1(16) + MemUsed(8) + Brk(24)
+	// + PerCore(128) + NetRx/NetTx/IOR/IOW(32) = 216 字节
+	recordSize = 216
+	magic      = "LITESGT1"
+	// version 2：PerCore 从 64 槽降到 32 槽（原 344 字节记录里 74% 是逐核数据，
+	// 而历史回看并不消费逐核序列，砍半后单条记录体积下降 37%）。
+	// 版本不匹配时 load() 会重建文件，旧历史会被清空。
+	version      = 2
+	perCoreSlots = 32
 )
+
+// MaxPerCore 是历史记录里能保存的逐核上限，超出的核心会被丢弃。
+const MaxPerCore = perCoreSlots
 
 // Sample 是一条历史采样。字段顺序即磁盘布局，改动必须同步 bump version。
 type Sample struct {
@@ -313,10 +321,10 @@ func encodeSample(s Sample) []byte {
 	for i, v := range s.PerCore {
 		binary.LittleEndian.PutUint32(buf[56+i*4:60+i*4], math.Float32bits(v))
 	}
-	binary.LittleEndian.PutUint64(buf[312:320], math.Float64bits(s.NetRx))
-	binary.LittleEndian.PutUint64(buf[320:328], math.Float64bits(s.NetTx))
-	binary.LittleEndian.PutUint64(buf[328:336], math.Float64bits(s.IOR))
-	binary.LittleEndian.PutUint64(buf[336:344], math.Float64bits(s.IOW))
+	binary.LittleEndian.PutUint64(buf[184:192], math.Float64bits(s.NetRx))
+	binary.LittleEndian.PutUint64(buf[192:200], math.Float64bits(s.NetTx))
+	binary.LittleEndian.PutUint64(buf[200:208], math.Float64bits(s.IOR))
+	binary.LittleEndian.PutUint64(buf[208:216], math.Float64bits(s.IOW))
 	return buf
 }
 
@@ -334,10 +342,10 @@ func decodeSample(buf []byte) Sample {
 	for i := 0; i < perCoreSlots; i++ {
 		s.PerCore[i] = math.Float32frombits(binary.LittleEndian.Uint32(buf[56+i*4 : 60+i*4]))
 	}
-	s.NetRx = math.Float64frombits(binary.LittleEndian.Uint64(buf[312:320]))
-	s.NetTx = math.Float64frombits(binary.LittleEndian.Uint64(buf[320:328]))
-	s.IOR = math.Float64frombits(binary.LittleEndian.Uint64(buf[328:336]))
-	s.IOW = math.Float64frombits(binary.LittleEndian.Uint64(buf[336:344]))
+	s.NetRx = math.Float64frombits(binary.LittleEndian.Uint64(buf[184:192]))
+	s.NetTx = math.Float64frombits(binary.LittleEndian.Uint64(buf[192:200]))
+	s.IOR = math.Float64frombits(binary.LittleEndian.Uint64(buf[200:208]))
+	s.IOW = math.Float64frombits(binary.LittleEndian.Uint64(buf[208:216]))
 	return s
 }
 

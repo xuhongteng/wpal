@@ -225,6 +225,9 @@ func runServer(cfg config.Config, col collector.Collector) error {
 }
 
 // buildRules 依据配置生成告警规则。
+//
+// 显式 `enabled: false` 的规则会从最终结果中移除，
+// 而不是保留一条永远不触发的假规则。
 func buildRules(cfg config.Config) []alerts.Rule {
 	rules := alerts.DefaultRules()
 	byKey := map[string]alerts.Rule{}
@@ -234,6 +237,10 @@ func buildRules(cfg config.Config) []alerts.Rule {
 	apply := func(key string, th config.Threshold) {
 		r, ok := byKey[key]
 		if !ok {
+			return
+		}
+		if !th.IsEnabled() {
+			delete(byKey, key)
 			return
 		}
 		r.Warn = th.Warn
@@ -255,7 +262,9 @@ func buildRules(cfg config.Config) []alerts.Rule {
 
 	out := make([]alerts.Rule, 0, len(byKey))
 	for _, r := range rules {
-		out = append(out, byKey[r.Key])
+		if updated, ok := byKey[r.Key]; ok {
+			out = append(out, updated)
+		}
 	}
 	// 让标签文案走 i18n 包，避免中文散落在各处
 	for i := range out {

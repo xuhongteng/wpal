@@ -108,7 +108,7 @@ alerts:
 | 键 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
 | `enabled` | bool | `true` | 关掉则完全不落盘。 |
-| `retain` | duration | `168h` | 历史留存时长。磁盘占用 ≈ `retain / persist_interval × 344 字节`。 |
+| `retain` | duration | `168h` | 历史留存时长。磁盘占用 ≈ `retain / persist_interval × 216 字节`。 |
 | `persist_interval` | duration | `10s` | 落盘周期。 |
 | `data_dir` | string | `data` | `history.db` 与 `events.jsonl` 所在目录。 |
 
@@ -118,10 +118,19 @@ alerts:
 
 | 键 | 含义 |
 |---|---|
+| `enabled` | 可选。写 `false` 可完全关闭该条规则，不必再塞假阈值 |
 | `warn` | 警告阈值（百分比；`load` 规则是倍数） |
 | `crit` | 严重阈值，必须 ≥ `warn` |
 | `hold` | 超过阈值需持续多久才触发 |
 | `recover` | 回落到阈值以下需持续多久才判定恢复 |
+
+关闭单条规则：
+
+```yaml
+alerts:
+  swap:
+    enabled: false
+```
 
 每条规则的状态机：
 

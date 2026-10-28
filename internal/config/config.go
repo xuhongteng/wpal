@@ -56,11 +56,20 @@ type AlertsConfig struct {
 }
 
 // Threshold 是一条阈值规则。
+//
+// Enabled 为 nil 时视为启用（保持旧配置文件的兼容性）；
+// 显式写 `enabled: false` 可关闭该规则，不必再靠塞一个 100 之类的假阈值绕过。
 type Threshold struct {
+	Enabled *bool   `yaml:"enabled"`
 	Warn    float64 `yaml:"warn"`
 	Crit    float64 `yaml:"crit"`
 	Hold    string  `yaml:"hold"`
 	Recover string  `yaml:"recover"`
+}
+
+// IsEnabled 报告该规则是否启用。
+func (t Threshold) IsEnabled() bool {
+	return t.Enabled == nil || *t.Enabled
 }
 
 // Default 返回内置默认配置。
@@ -155,6 +164,10 @@ func (c *Config) validate() error {
 		"cpu": c.Alerts.CPU, "memory": c.Alerts.Memory, "swap": c.Alerts.Swap,
 		"disk": c.Alerts.Disk, "inode": c.Alerts.Inode, "load": c.Alerts.Load,
 	} {
+		// 显式关闭的规则不参与校验，允许留空阈值
+		if !th.IsEnabled() {
+			continue
+		}
 		if th.Warn <= 0 || th.Crit <= 0 {
 			return fmt.Errorf("告警阈值 %s 无效（warn/crit 必须为正数）", name)
 		}

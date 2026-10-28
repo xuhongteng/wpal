@@ -107,7 +107,12 @@ func (s *Server) handleSnapshot(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, snap)
 }
 
-// handleProcs 返回进程明细（按需拉取，不占用实时推送带宽）。
+// handleProcs 返回当前帧里的进程榜（CPU 榜 / 内存榜各一份）。
+//
+// 注意：这里返回的是采样循环已经缓存的 Top-N，不会重新采集。
+// 因此 limit 只能在该帧已有的条数内裁剪，无法放大到超过
+// collect.top_processes 配置的长度；同时这两个列表本身也在
+// 每秒的 WebSocket 帧里，所以本接口并不额外节省任何带宽。
 func (s *Server) handleProcs(w http.ResponseWriter, r *http.Request) {
 	snap := s.sampler.Latest()
 	if snap == nil {
@@ -115,20 +120,28 @@ func (s *Server) handleProcs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sortBy := r.URL.Query().Get("sort")
-	list := snap.Procs
-	if sortBy == "mem" {
-		list = snap.ProcsMem
-	}
 	limit := 50
 	if v := r.URL.Query().Get("limit"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 && n <= 200 {
 			limit = n
 		}
 	}
-	if len(list) > limit {
-		list = list[:limit]
+
+	byCPU := snap.Procs
+	byMem := snap.ProcsMem
+	if len(byCPU) > limit {
+		byCPU = byCPU[:limit]
 	}
-	writeJSON(w, map[string]any{"procs": list, "procs_mem": snap.ProcsMem})
+	if len(byMem) > limit {
+		byMem = byMem[:limit]
+	}
+
+	// 兼容既有调用方：sort 只决定 procs 字段取哪一份，两个列表都会返回。
+	primary := byCPU
+	if sortBy == "mem" {
+		primary = byMem
+	}
+	writeJSON(w, map[string]any{"procs": primary, "procs_mem": byMem})
 }
 
 // handleEvents 返回告警事件流（倒序）。
@@ -189,6 +202,23 @@ func (s *Server) handleHistory(w http.ResponseWriter, r *http.Request) {
 		diskio  = make([]map[string][]float64, 0, n)
 	)
 
+	// 逐核序列必须按固定下标对齐输出，不能按「值是否为 0」过滤：
+	// 0% 是合法的核心占用值，按值过滤会让空闲核之后的各核整体左移，
+	// 前端按索引渲染时把 CPU3 的数据画到 CPU1 上。
+	// 这里统一裁掉「整个时间窗内所有采样都为 0」的尾部槽位，
+	// 既保持各点下标一致，又不会带上大量空槽。
+	coreCols := 0
+	for _, sm := range samples {
+		for i := len(sm.PerCore) - 1; i >= 0; i-- {
+			if sm.PerCore[i] != 0 {
+				if i+1 > coreCols {
+					coreCols = i + 1
+				}
+				break
+			}
+		}
+	}
+
 	for _, sm := range samples {
 		ts = append(ts, sm.TS)
 		cpu = append(cpu, sm.CPU)
@@ -197,12 +227,8 @@ func (s *Server) handleHistory(w http.ResponseWriter, r *http.Request) {
 		swap = append(swap, sm.Swap)
 		load1 = append(load1, sm.Load1)
 
-		pc := make([]float32, 0, len(sm.PerCore))
-		for _, v := range sm.PerCore {
-			if v != 0 {
-				pc = append(pc, v)
-			}
-		}
+		pc := make([]float32, coreCols)
+		copy(pc, sm.PerCore[:coreCols])
 		percore = append(percore, pc)
 
 		brk = append(brk, map[string]float64{

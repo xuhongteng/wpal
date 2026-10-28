@@ -109,7 +109,7 @@ Durations accept Go's syntax: `s`, `m`, `h` (`30s`, `5m`, `168h`).
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `enabled` | bool | `true` | Disable to run without writing anything to disk. |
-| `retain` | duration | `168h` | How much history to keep. Disk usage ≈ `retain / persist_interval × 344 bytes`. |
+| `retain` | duration | `168h` | How much history to keep. Disk usage ≈ `retain / persist_interval × 216 bytes`. |
 | `persist_interval` | duration | `10s` | How often a sample is written to disk. |
 | `data_dir` | string | `data` | Where `history.db` and `events.jsonl` live. |
 
@@ -119,10 +119,19 @@ Each rule accepts:
 
 | Key | Meaning |
 |---|---|
+| `enabled` | Optional. Set to `false` to turn the rule off entirely instead of faking a threshold |
 | `warn` | Warning threshold (percentage, or a multiplier for `load`) |
 | `crit` | Critical threshold; must be ≥ `warn` |
 | `hold` | How long the value must stay above the threshold before firing |
 | `recover` | How long it must stay below the threshold before the alert resolves |
+
+To disable a single rule:
+
+```yaml
+alerts:
+  swap:
+    enabled: false
+```
 
 The state machine per rule:
 
