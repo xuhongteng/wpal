@@ -6,7 +6,7 @@
 Name:           wpal
 Version:        %{version}
 Release:        1%{?dist}
-Summary:        Lightweight server resource monitoring dashboard
+Summary:        轻量级跨平台服务器资源监控看板
 
 License:        Apache-2.0
 URL:            https://github.com/xuhongteng/wpal
@@ -17,10 +17,9 @@ Requires:       shadow-utils
 Requires(pre):  systemd
 
 %description
-Wpal is a lightweight, cross-platform server resource monitoring dashboard.
-It ships as a single static binary with the web UI embedded, streams live metrics
-over WebSocket, keeps history in a bounded ring file, and raises threshold alerts
-directly in the dashboard.
+Wpal 是一款轻量级、跨平台的服务器资源监控看板。
+它以单个静态二进制交付，内嵌 Web 看板，通过 WebSocket 实时推送指标，
+历史数据保存在有界的环形文件里，阈值告警直接呈现在看板上。
 
 %prep
 %setup -q
@@ -39,7 +38,7 @@ mkdir -p %{buildroot}%{_localstatedir}/wpal
 
 %files
 %license LICENSE
-%doc README.md README.zh-CN.md CHANGELOG.md NOTICE
+%doc README.md README.en.md CHANGELOG.md NOTICE
 %{_bindir}/wpal
 %{_unitdir}/wpal.service
 %config(noreplace) %{_sysconfdir}/wpal/config.yaml

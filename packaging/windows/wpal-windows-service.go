@@ -29,7 +29,7 @@ import (
 
 const serviceName = "wpal"
 const serviceDisplay = "Wpal - Server Resource Monitor"
-const serviceDescription = "Lightweight server resource monitoring dashboard."
+const serviceDescription = "轻量级跨平台服务器资源监控看板。"
 
 type wpalService struct{}
 

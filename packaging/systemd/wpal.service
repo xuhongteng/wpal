@@ -1,5 +1,5 @@
 [Unit]
-Description=Wpal - lightweight server resource monitoring dashboard
+Description=Wpal（微光）—— 轻量级跨平台服务器资源监控看板
 Documentation=https://github.com/xuhongteng/wpal
 After=network.target
 

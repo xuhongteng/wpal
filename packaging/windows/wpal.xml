@@ -3,7 +3,7 @@
 <ServiceInstall Id="WpalServiceInstall"
                 Name="wpal"
                 DisplayName="Wpal - Server Resource Monitor"
-                Description="Lightweight server resource monitoring dashboard."
+                Description="轻量级跨平台服务器资源监控看板。"
                 Type="ownProcess"
                 Start="auto"
                 ErrorControl="normal"
