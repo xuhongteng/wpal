@@ -1,13 +1,13 @@
-# FAQ
+# 常见问题
 
-[简体中文](FAQ.zh-CN.md)
+[中文](FAQ.md) · [English](FAQ.en.md)
 
 ---
 
-### Why does the container show the container's metrics instead of the host's?
+### 为什么容器里显示的是容器自身的指标，而不是宿主机的？
 
-Because `/proc` inside a container reflects the container's PID namespace. Run
-it with `--pid host --network host` and mount the host root read-only:
+因为容器内的 `/proc` 反映的是容器的 PID 命名空间。用 `--pid host --network host` 启动，
+并把宿主根目录以只读方式挂载进来：
 
 ```bash
 docker run -d --pid host --network host -v /:/host/root:ro -v data:/data \
@@ -15,110 +15,100 @@ docker run -d --pid host --network host -v /:/host/root:ro -v data:/data \
   --listen 127.0.0.1:8891 --data-dir /data --host-root /host/root
 ```
 
-The `--host-root` flag is what lets Wpal read the *host's* mount table, so
-partition sizes and inode usage are correct rather than the overlay's.
+`--host-root` 让 Wpal 能读到**宿主机**的挂载表，因此分区容量和 inode 用量是真实值，
+而不是 overlay 文件系统的数值。
 
 ---
 
-### Why does the disk show a different size than `df` shows?
+### 为什么磁盘占用和 `df` 显示的不一致？
 
-Wpal follows `free`'s definition of "available": the percentage is
-`used / (used + available-to-user)`, where `available` excludes the blocks
-reserved for root. On ext4 with the default 5% reservation this makes the
-number about 5 points *lower* than `df`. `total`, `used` and `free` are
-reported separately and match `df` exactly.
+Wpal 沿用 `free` 对 "available" 的定义：百分比按 `used / (used + 用户可用)` 计算，
+其中 `available` 不含为 root 预留的部分。在默认预留 5% 的 ext4 上，这个数值会比 `df`
+**低**大约 5 个百分点。`total`、`used` 和 `free` 是分别上报的，与 `df` 完全一致。
 
 ---
 
-### Why is the swap percentage so high right after a restart?
+### 为什么刚重启完 swap 占用率就很高？
 
-Swap is not released back to the OS when a process exits — the pages stay in
-swap until something else needs that memory. A high swap percentage with low
-memory pressure is therefore normal and not, by itself, a problem. The alert
-rule exists to catch *growing* swap.
-
----
-
-### The dashboard says "系统正常" but I expected an alert. Why?
-
-Two common reasons:
-
-1. The rule has a `hold` window — the value must stay above the threshold
-   continuously for that long before it fires.
-2. The value recovered before `hold` elapsed, so the timer reset.
-
-Watch the event stream (bottom-right) to see what actually fired.
+进程退出时，swap 并不会归还给操作系统——页面会一直留在 swap 里，直到有别的进程
+需要那块内存为止。因此「swap 占用高但内存压力低」属于正常现象，本身不是问题。
+告警规则的作用是捕捉 swap 持续**增长**的情况。
 
 ---
 
-### Does the dashboard have authentication?
+### 看板显示"系统正常"，但我预期应该告警，为什么？
 
-No. Wpal binds to `127.0.0.1` and expects a reverse proxy to provide
-TLS and authentication. See [INSTALL.md](INSTALL.md#exposing-the-dashboard).
+常见原因有两个：
 
-If you must expose it directly, put it behind nginx with
-`auth_basic`, an OAuth proxy, or an IP allow-list.
+1. 规则带 `hold` 窗口——数值必须持续高于阈值达到该时长才会触发。
+2. 数值在 `hold` 耗尽前就恢复了，计时器被重置。
+
+观察右下角的事件流，可以确认实际触发过什么。
 
 ---
 
-### Can I run it on a machine without a public IP?
+### 看板有身份认证吗？
 
-Yes — it only needs to be reachable by the browser that should see it.
-Use an SSH tunnel:
+没有。Wpal 默认绑定 `127.0.0.1`，由前置的反向代理提供 TLS 和认证。
+详见[安装说明](INSTALL.md#对外暴露)。
+
+如果确实要直接暴露，请在 nginx 后面启用 `auth_basic`、OAuth 代理，或 IP 白名单。
+
+---
+
+### 没有公网 IP 的机器能跑吗？
+
+能——只要能被需要访问它的浏览器访问到即可。用 SSH 隧道：
 
 ```bash
 ssh -N -L 8891:127.0.0.1:8891 user@server
-# then open http://127.0.0.1:8891/ locally
+# 然后在本地打开 http://127.0.0.1:8891/
 ```
 
 ---
 
-### How much disk does the history file use?
+### 历史数据文件占多少磁盘？
 
-`retain / persist_interval × 344 bytes`, allocated once:
+`留存时长 / 落盘间隔 × 344 字节`，一次性分配：
 
-| retain | persist_interval | size |
+| 留存时长 | 落盘间隔 | 占用 |
 |---|---|---|
-| 7 days | 10s | ~20 MB |
-| 24 hours | 10s | ~7 MB |
-| 7 days | 60s | ~3.4 MB |
+| 7 天 | 10s | ~20 MB |
+| 24 小时 | 10s | ~7 MB |
+| 7 天 | 60s | ~3.4 MB |
 
-The file never grows beyond that, regardless of uptime.
-
----
-
-### What is the difference between `load` and `load per core`?
-
-The `load` rule compares `load1` against the number of CPU cores, so a load
-average of 4 on a 4-core machine trips it. That is usually what you want:
-"all cores are busy".
+无论机器运行多久，该文件都不会超出这个大小。
 
 ---
 
-### Can I monitor multiple machines with one Wpal?
+### `load` 和 `load per core` 有什么区别？
 
-Not yet — one process monitors one machine. Running one instance per machine
-and putting them behind a proxy that adds a path prefix (or a subdomain) is
-the intended workaround. A central/agent architecture is on the roadmap but
-not implemented.
+`load` 规则会把 `load1` 与 CPU 核数做比较，所以在 4 核机器上负载均值达到 4 就会触发。
+这通常正是你想要的语义："所有核心都忙"。
 
 ---
 
-### How do I check what Wpal actually sees?
+### 一个 Wpal 能监控多台机器吗？
+
+暂时不能——一个进程监控一台机器。目前的预期做法是每台机器跑一个实例，
+再用带路径前缀（或子域名）的代理聚合。中心化/agent 架构在路线图上，但尚未实现。
+
+---
+
+### 怎么确认 Wpal 实际采到了什么？
 
 ```bash
 wpal --dump | python3 -m json.tool | head -40
 ```
 
-`--dump` prints one snapshot in exactly the same shape as `/api/snapshot`,
-which is the fastest way to tell whether a metric is missing or just rendered
-differently.
+`--dump` 输出的快照结构与 `/api/snapshot` 完全一致，是判断某个指标是"没采到"
+还是"只是渲染方式不同"最快的方式。
 
 ---
 
-### The WebSocket disconnects every few minutes
+### WebSocket 每隔几分钟就断一次
 
-Check the proxy's read timeout. nginx needs:
+检查代理的读超时。nginx 需要：
 
 ```nginx
 proxy_http_version 1.1;
@@ -127,19 +117,18 @@ proxy_set_header Connection "upgrade";
 proxy_read_timeout 600s;
 ```
 
-Without the `Upgrade` headers the connection is not a WebSocket at all; without
-a long `proxy_read_timeout` an idle connection gets cut.
+缺少 `Upgrade` 头时连接根本不是 WebSocket；`proxy_read_timeout` 过短则空闲连接会被切断。
 
 ---
 
-### How do I uninstall completely?
+### 怎么彻底卸载？
 
-See [INSTALL.md](INSTALL.md#uninstall). Remember that the history file lives in
-`history.data_dir` and is not removed by the package manager unless you purge.
+见[安装说明](INSTALL.md#卸载)。注意历史数据文件位于 `history.data_dir`，
+除非执行 purge，否则包管理器不会删除它。
 
 ---
 
-### Where can I see the API contract?
+### API 契约在哪里看？
 
-`internal/collector/collector.go` is the single source of truth for the JSON
-shape, and `docs/CONFIGURATION.md` documents the HTTP endpoints.
+`internal/collector/collector.go` 是 JSON 结构的唯一真源，
+HTTP 接口说明见 [CONFIGURATION.md](CONFIGURATION.md)。

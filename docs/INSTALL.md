@@ -1,41 +1,39 @@
-# Installation
+# 安装说明
 
-[简体中文](INSTALL.zh-CN.md)
+[中文](INSTALL.md) · [English](INSTALL.en.md)
 
-Wpal ships as a single static binary. Pick the method that matches your
-platform; every method ends with the same thing — one process listening on
-`127.0.0.1:8891`.
+Wpal 以**单个静态二进制**的形式分发。挑一个适合你平台的安装方式，
+最终得到的都是同一个东西——一个监听在 `127.0.0.1:8891` 的进程。
 
 ---
 
-## Requirements
+## 环境要求
 
 | | |
 |---|---|
-| OS | Linux (kernel 2.6+), macOS 11+, Windows 10/Server 2016+ |
-| Arch | amd64, arm64, 386 (Linux only) |
-| Runtime | none — no Python, Node, database or container runtime |
-| Privileges | none for a bare-metal run; read access to the metrics of the user it runs as |
+| 操作系统 | Linux（内核 2.6+）、macOS 11+、Windows 10 / Server 2016+ |
+| 架构 | amd64、arm64、386（仅 Linux） |
+| 运行时 | 无——不需要 Python、Node、数据库或容器运行时 |
+| 权限 | 裸机运行不需要特权；以哪个用户启动就只能读该用户可读的指标 |
 
 ---
 
 ## Linux
 
-### One-liner
+### 一键安装
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/xuhongteng/wpal/main/packaging/scripts/install.sh | sh
 ```
 
-The script installs the binary to `/usr/local/bin/wpal`, creates a
-`wpal` system user, writes `/etc/wpal/config.yaml` and registers a
-systemd unit.
+脚本会把二进制装到 `/usr/local/bin/wpal`，创建 `wpal` 系统用户，
+写入 `/etc/wpal/config.yaml`，并注册 systemd 服务。
 
-### From a release tarball
+### 手动安装（发布包）
 
 ```bash
 VERSION=1.0.0
-ARCH=amd64   # or arm64 / 386
+ARCH=amd64   # 或 arm64 / 386
 curl -fsSLO "https://github.com/xuhongteng/wpal/releases/download/v${VERSION}/wpal_${VERSION}_linux_${ARCH}.tar.gz"
 tar -xzf "wpal_${VERSION}_linux_${ARCH}.tar.gz"
 
@@ -43,7 +41,7 @@ sudo install -m 0755 wpal /usr/local/bin/wpal
 wpal
 ```
 
-### Debian / Ubuntu (.deb)
+### Debian / Ubuntu（.deb）
 
 ```bash
 curl -fsSLO "https://github.com/xuhongteng/wpal/releases/download/v1.0.0/wpal_1.0.0_linux_amd64.deb"
@@ -51,7 +49,7 @@ sudo dpkg -i wpal_1.0.0_linux_amd64.deb
 sudo systemctl enable --now wpal
 ```
 
-### RHEL / Rocky / Fedora (.rpm)
+### RHEL / Rocky / Fedora（.rpm）
 
 ```bash
 sudo rpm -Uvh wpal_1.0.0_linux_amd64.rpm
@@ -60,15 +58,14 @@ sudo systemctl enable --now wpal
 
 ### systemd
 
-The packaged unit runs the service as the unprivileged `wpal` user with a
-hardened sandbox:
+安装包内置的 unit 会以**非特权用户** `wpal` + 加固沙箱运行：
 
 ```bash
 sudo systemctl status wpal
 sudo journalctl -u wpal -f
 ```
 
-To run it yourself without installing the package:
+不用安装包、想自己跑 systemd：
 
 ```bash
 sudo install -m 0644 packaging/systemd/wpal.service /etc/systemd/system/
@@ -85,11 +82,11 @@ brew install wpal
 wpal
 ```
 
-Or manually:
+或手动安装：
 
 ```bash
 VERSION=1.0.0
-ARCH=arm64   # or amd64
+ARCH=arm64   # 或 amd64
 curl -fsSLO "https://github.com/xuhongteng/wpal/releases/download/v${VERSION}/wpal_${VERSION}_darwin_${ARCH}.tar.gz"
 tar -xzf "wpal_${VERSION}_darwin_${ARCH}.tar.gz"
 sudo install -m 0755 wpal /usr/local/bin/wpal
@@ -107,23 +104,22 @@ sudo launchctl load -w /Library/LaunchDaemons/com.wpal.agent.plist
 
 ## Windows
 
-### MSI installer
+### MSI 安装包
 
-Download `wpal_1.0.0_windows_amd64.msi` and run it. The installer writes
-`C:\ProgramData\Wpal\` and can register the service.
+下载 `wpal_1.0.0_windows_amd64.msi` 运行即可，
+安装程序会写入 `C:\ProgramData\Wpal\` 并可注册服务。
 
-> The MSI is produced by goreleaser ≥ 2.8 (WiX template in
-> `packaging/windows/`). If your release only ships the `.zip`, use the
-> portable instructions below.
+> MSI 由 goreleaser ≥ 2.8 生成（WiX 模板在 `packaging/windows/`）。
+> 若某个版本只提供了 `.zip`，用下面的便携版方式即可。
 
-### Portable
+### 便携版
 
 ```powershell
-# unzip wpal_1.0.0_windows_amd64.zip
+# 解压 wpal_1.0.0_windows_amd64.zip
 .\wpal.exe --config .\config.yaml
 ```
 
-### Register as a Windows service
+### 注册为 Windows 服务
 
 ```powershell
 # 管理员权限的 PowerShell
@@ -153,28 +149,27 @@ docker run -d --name wpal \
   ghcr.io/xuhongteng/wpal
 ```
 
-or with compose:
+或用 compose：
 
 ```bash
 docker compose up -d
 ```
 
-### Why those flags
+### 为什么需要这些参数
 
-| Flag | Why |
+| 参数 | 原因 |
 |---|---|
-| `--pid host` | the container reads the **host's** `/proc`, so process and CPU stats are real |
-| `--network host` | `/proc/net` reflects the host's network namespace, so TCP state counts are real |
-| `-v /:/host/root:ro` | gives access to the real mount table (partition sizes, inode usage) |
+| `--pid host` | 容器内读到的 `/proc` 是**宿主的**，进程与 CPU 数据才是真实值 |
+| `--network host` | `/proc/net` 反映宿主网络命名空间，TCP 状态统计才是真实的 |
+| `-v /:/host/root:ro` | 拿到真实挂载表，分区容量与 inode 才准确（否则是 overlay 的） |
 
-Without them you would be monitoring the container, not the machine.
+缺任何一个，你监控到的都只是容器自己。
 
 ---
 
-## Exposing the dashboard
+## 对外暴露
 
-Wpal binds to loopback on purpose. To share it, put a reverse proxy in
-front:
+Wpal 默认只监听回环地址，这是刻意的。要共享，请用反向代理：
 
 ```nginx
 server {
@@ -197,8 +192,7 @@ server {
 }
 ```
 
-Deploying under a sub-path works too — set `server.base_path` in the config and
-strip the prefix in `proxy_pass`:
+部署在子路径下也可以，在配置里设 `server.base_path`，并在 `proxy_pass` 里去掉前缀：
 
 ```yaml
 server:
@@ -212,19 +206,18 @@ location ^~ /monitor/ {
 }
 ```
 
-> There is no built-in authentication. Always terminate TLS and add
-> authentication at the proxy before exposing the dashboard publicly.
+> 内置**没有鉴权**。对外暴露前务必在代理层做 TLS 与鉴权。
 
 ---
 
-## Uninstall
+## 卸载
 
-**Linux (deb/rpm)**
+**Linux（deb/rpm）**
 
 ```bash
 sudo systemctl disable --now wpal
-sudo apt remove wpal        # or: sudo rpm -e wpal
-sudo rm -rf /var/lib/wpal   # 保留历史数据时删除此行
+sudo apt remove wpal        # 或：sudo rpm -e wpal
+sudo rm -rf /var/lib/wpal   # 想保留历史数据就删掉这行
 ```
 
 **macOS**
@@ -243,7 +236,7 @@ wpal-service.exe remove
 
 ---
 
-## Verify the installation
+## 验证安装
 
 ```bash
 wpal --version

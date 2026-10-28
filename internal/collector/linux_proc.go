@@ -111,6 +111,7 @@ func parseProcStat(s string) (procStat, bool) {
 	}
 	st.name = s[lp+1 : rp]
 	rest := strings.Fields(s[rp+1:])
+	// /proc/<pid>/stat 的字段下标：
 	// rest[0]=state rest[11]=utime rest[12]=stime rest[17]=num_threads rest[21]=rss
 	if len(rest) < 22 {
 		return st, false

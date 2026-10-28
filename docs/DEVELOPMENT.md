@@ -1,37 +1,37 @@
-# Development
+# 开发指南
 
-[简体中文](DEVELOPMENT.zh-CN.md)
+[中文](DEVELOPMENT.md) · [English](DEVELOPMENT.en.md)
 
 ---
 
-## Layout
+## 目录结构
 
 ```
-cmd/wpal/        CLI entry point: flag parsing, wiring, graceful shutdown
+cmd/wpal/        CLI 入口：flag 解析、装配各组件、优雅退出
 internal/
-  collector/          Metric collection. collector.go is the JSON contract.
-    linux.go            Linux: reads /proc directly
-    other.go            macOS / Windows: gopsutil
-    util.go             Shared helpers (no build tag)
-  config/             YAML + env + flag configuration
-  history/            Bounded ring file (ring.go) and event log (events.go)
-  alerts/             Threshold state machine (engine.go) and rules (rules.go)
-  sampler/            Sampling loop, persistence and broadcast
-  server/             HTTP routes, WebSocket hub, static assets
-  i18n/               Backend-side fallback texts
-  version/            Version info (injected via ldflags)
-web/                  Frontend (embedded into the binary)
+  collector/          指标采集。collector.go 是 JSON 契约
+    linux.go            Linux：直读 /proc
+    other.go            macOS / Windows：gopsutil
+    util.go             公共辅助函数（无 build tag）
+  config/             YAML + 环境变量 + flag 配置
+  history/            有界环形文件（ring.go）与事件日志（events.go）
+  alerts/             阈值状态机（engine.go）与规则定义（rules.go）
+  sampler/            采样循环、落盘与广播
+  server/             HTTP 路由、WebSocket 集线器、静态资源
+  i18n/               后端侧兜底文案
+  version/            版本信息（通过 ldflags 注入）
+web/                  前端（嵌入二进制）
   locales/             zh-CN.json / en-US.json
-  embed.go             go:embed directive
-packaging/            systemd, launchd, Windows, deb, rpm, install script
-tools/                Verification scripts
+  embed.go             go:embed 指令
+packaging/            systemd、launchd、Windows、deb、rpm、安装脚本
+tools/                验证脚本
 ```
 
 ---
 
-## Build environment
+## 构建环境
 
-> `/tmp` on many CI images is a small tmpfs. Keep the Go caches under `$HOME`.
+> 很多 CI 镜像上的 `/tmp` 是容量很小的 tmpfs。请把 Go 缓存放在 `$HOME` 下。
 
 ```bash
 export GOROOT="$HOME/sdk/go"
@@ -43,97 +43,90 @@ export GOPROXY="https://goproxy.cn,direct"
 export CGO_ENABLED=0
 ```
 
-`make` already exports these; `scripts/env.sh` has the same list for manual use.
+`make` 已经导出这些变量；`scripts/env.sh` 里是同一份清单，供手动使用。
 
 ---
 
-## Common commands
+## 常用命令
 
 ```bash
 make build       # ./bin/wpal
-make run         # run with ./data as the data directory
-make test        # unit tests with -race
+make run         # 以 ./data 为数据目录运行
+make test        # 带 -race 的单元测试
 make vet         # go vet
-make lint        # golangci-lint (skipped if not installed)
+make lint        # golangci-lint（未安装则跳过）
 make fmt         # gofmt -w
-make cross       # cross-compile every target into dist/
-make release     # goreleaser: packages, checksums, SBOM
+make cross       # 交叉编译所有目标平台到 dist/
+make release     # goreleaser：安装包、校验和、SBOM
 make clean
 ```
 
 ---
 
-## The JSON contract
+## JSON 契约
 
-`internal/collector/collector.go` defines every field that reaches the browser.
-Rules for changing it:
+`internal/collector/collector.go` 定义了所有会到达浏览器的字段。修改规则：
 
-- **Additive only.** New fields are fine; renaming or removing one breaks
-  consumers.
-- Field semantics are documented there and mirrored in the Python reference
-  implementation used by `tools/compare.py`.
+- **只增不改。** 新增字段没问题；重命名或删除字段会破坏使用方。
+- 字段语义在该文件里有说明，并与 `tools/compare.py` 使用的 Python 参考实现保持一致。
 
 ---
 
-## Verification
+## 验证
 
-The repository keeps two implementations in sync: the Go one and a Python
-reference used by the comparison scripts.
+仓库里同时维护两套实现：Go 实现，以及供对比脚本使用的 Python 参考实现。
 
-| Script | What it proves |
+| 脚本 | 验证内容 |
 |---|---|
-| `tools/compare.py` | 30+ collected fields match the reference implementation |
-| `tools/verify_web.py` | DOM assertions + screenshot for a given backend |
-| `tools/compare_shots.py` | the same UI renders identically against both backends |
-| `tools/verify_i18n.py` | translation keys are complete and language switching works |
+| `tools/compare.py` | 30+ 个采集字段与参考实现一致 |
+| `tools/verify_web.py` | 对指定后端做 DOM 断言 + 截图 |
+| `tools/compare_shots.py` | 同一套 UI 在两个后端下渲染完全一致 |
+| `tools/verify_i18n.py` | 翻译键完整、语言切换正常 |
 
 ```bash
-make verify       # all of the above
-make verify-a1    # just the field comparison
+make verify       # 以上全部
+make verify-a1    # 只跑字段对比
 ```
 
-`compare.py` samples both sides for ~10 s and compares windowed means for
-rate-like values, because two independent samples taken at different moments
-differ for reasons that have nothing to do with correctness.
+`compare.py` 会对两端各采样约 10 秒，并对速率类指标比较窗口均值——
+两次独立采样发生在不同时刻，本身就会因与正确性无关的原因产生差异。
 
 ---
 
-## Writing a collector
+## 新增一个采集指标
 
-1. Add the field to `internal/collector/collector.go`.
-2. Implement it in `linux.go` and, if the platform supports it, in `other.go`.
-   Platforms that cannot provide a value must report `0` — never omit the
-   field and never fail the snapshot.
-3. Add a comparison rule to `tools/compare.py`.
-4. Document the platform difference in `docs/CONFIGURATION.md`.
-
----
-
-## Writing a translation
-
-1. Add the key to **both** `web/locales/zh-CN.json` and `web/locales/en-US.json`.
-   `tools/verify_i18n.py` fails if the key sets diverge.
-2. Use it in the frontend with `t('key', {param: value})`.
-3. Backend-side fallback texts live in `internal/i18n/i18n.go`; the backend also
-   emits `label_key` / `detail_key` so the frontend can translate them.
+1. 在 `internal/collector/collector.go` 中添加字段。
+2. 在 `linux.go` 中实现，并在平台支持时同步在 `other.go` 中实现。
+   无法提供该值的平台必须上报 `0`——既不能省略字段，也不能让整个快照失败。
+3. 在 `tools/compare.py` 中添加对应的对比规则。
+4. 在 `docs/CONFIGURATION.md` 中说明该平台差异。
 
 ---
 
-## Release process
+## 新增一条文案
 
-1. Update `CHANGELOG.md`.
-2. Tag: `git tag -a v1.1.0 -m "v1.1.0" && git push --tags`.
-3. The `Release` workflow builds every platform, publishes the packages with
-   checksums and an SBOM, and pushes the container image.
-4. Verify the artifacts locally first with `goreleaser release --snapshot --clean`.
+1. 在 **两个** 文件 `web/locales/zh-CN.json` 和 `web/locales/en-US.json` 中添加键。
+   两边键集合不一致时 `tools/verify_i18n.py` 会失败。
+2. 在前端通过 `t('key', {param: value})` 使用它。
+3. 后端侧兜底文案放在 `internal/i18n/i18n.go`；后端同时会输出
+   `label_key` / `detail_key`，供前端翻译。
 
 ---
 
-## Budgets
+## 发布流程
 
-| Budget | Limit |
+1. 更新 `CHANGELOG.md`。
+2. 打标签：`git tag -a v1.1.0 -m "v1.1.0" && git push --tags`。
+3. `Release` workflow 会构建所有平台，发布带校验和与 SBOM 的安装包，并推送容器镜像。
+4. 先在本地用 `goreleaser release --snapshot --clean` 验证产物。
+
+---
+
+## 预算
+
+| 预算项 | 上限 |
 |---|---|
-| Binary size | ≤ 12 MB per platform |
-| Idle RSS | ≤ 12 MiB |
-| Runtime dependencies | none |
-| New Go dependencies | discuss in an issue first |
+| 二进制体积 | 每平台 ≤ 12 MB |
+| 空闲 RSS | ≤ 12 MiB |
+| 运行时依赖 | 无 |
+| 新增 Go 依赖 | 先在 issue 里讨论 |

@@ -1,56 +1,52 @@
-# Changelog
+# 变更日志
 
-All notable changes to this project are documented in this file.
+本文件记录本项目所有值得关注的变更。
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
+版本号遵循[语义化版本](https://semver.org/lang/zh-CN/spec/v2.0.0.html)。
 
-## [Unreleased]
+[中文](CHANGELOG.md) · [English](CHANGELOG.en.md)
+
+## [未发布]
 
 ## [1.0.0] - 2026-10-27
 
-### Added
+### 新增
 
-- Cross-platform metric collection for Linux, macOS and Windows.
-  - Linux reads `/proc` directly (CPU with per-core breakdown, memory, swap,
-    diskstats, network, TCP states, processes).
-  - macOS and Windows use gopsutil as the cross-platform backend.
-- Single static binary with the web dashboard embedded (`embed.FS`).
-- Live dashboard streamed over WebSocket at one frame per second.
-- Six built-in threshold rules (CPU, memory, swap, disk, inode, load per core)
-  with hold/recover windows, rendered as in-dashboard highlights and an event
-  stream.
-- Bounded on-disk ring file for history (7 days by default, fixed size, never
-  grows), with instant replay from 5 minutes to 7 days.
-- Bilingual UI: Chinese by default, English one click away.
-- API surface: `/api/health`, `/api/snapshot`, `/api/history`, `/api/events`,
-  `/api/procs`, `WS /ws/stream`.
-- Packaging for Linux (`.deb`, `.rpm`, tarball, systemd unit), macOS (tarball,
-  launchd agent), Windows (`.zip`, service registration helper) and Docker.
-- `curl | sh` installer for Linux and macOS.
-- CI: lint, tests on Linux/macOS/Windows, cross-compile matrix with a 12 MB
-  binary size budget, actionlint workflow validation, CodeQL scanning.
-- Field-level verification scripts comparing the collector against a reference
-  implementation, plus screenshot-level front-end comparison.
+- Linux、macOS、Windows 跨平台指标采集。
+  - Linux 直接读取 `/proc`（含逐核分解的 CPU、内存、swap、diskstats、网络、TCP 状态、进程）。
+  - macOS 与 Windows 以 gopsutil 作为跨平台后端。
+- 单个静态二进制，Web 看板通过 `embed.FS` 一并嵌入。
+- 实时看板通过 WebSocket 每秒推送一帧。
+- 六条内置阈值规则（CPU、内存、swap、磁盘、inode、按核负载），带 hold/recover 窗口，
+  在看板内以高亮呈现，并提供事件流。
+- 有界的磁盘环形文件保存历史（默认 7 天，大小固定，永不增长），
+  支持从 5 分钟到 7 天的即时回看。
+- 中英双语界面：默认中文，一键切换英文。
+- 接口清单：`/api/health`、`/api/snapshot`、`/api/history`、`/api/events`、
+  `/api/procs`、`WS /ws/stream`。
+- 打包形态：Linux（`.deb`、`.rpm`、tarball、systemd unit）、macOS（tarball、launchd agent）、
+  Windows（`.zip`、服务注册助手）以及 Docker。
+- Linux 与 macOS 的 `curl | sh` 一键安装脚本。
+- CI：lint、Linux/macOS/Windows 三平台测试、带 12 MB 体积预算的交叉编译矩阵、
+  actionlint 工作流校验、CodeQL 扫描。
+- 字段级验证脚本，将采集器与参考实现逐字段对比；另有截图级前端比对。
 
-### Interface
+### 界面
 
-- macOS 27 Retina inspired dashboard: unified title bar with traffic-light
-  window controls, frosted-glass cards, and a light/dark theme that follows the
-  system appearance.
-- 2x2 live quadrant matrix — CPU (per-core breakdown), memory & swap, network
-  throughput and disk I/O all stream on one screen, no tab switching required.
-- On-demand drawers instead of permanent panels: a top-resource-consumer list in
-  the style of iStat Menus, and a notification-centre style alert/event stream.
-- Environment variables are prefixed `WPAL_*`; the pre-rename `LITESIGHT_*`
-  names still work as a fallback.
+- macOS 27 Retina 风格看板：统一标题栏配红绿灯窗口控件、毛玻璃卡片，
+  浅色/深色主题跟随系统外观。
+- 2×2 实时象限矩阵——CPU（逐核分解）、内存与 swap、网络吞吐、磁盘 I/O
+  同屏流式展示，无需切换标签页。
+- 以按需抽屉替代常驻面板：iStat Menus 风格的资源占用 Top 榜，
+  以及通知中心风格的告警/事件流。
+- 环境变量统一使用 `WPAL_*` 前缀；改名前的 `LITESIGHT_*` 仍可作为兼容回退。
 
-### Notes
+### 说明
 
-- The service listens on loopback by default. Put a reverse proxy in front of
-  it to expose the dashboard.
-- Platform metrics that do not exist (inode on macOS/Windows, steal time on
-  non-Linux) are reported as `0` instead of failing the snapshot.
+- 服务默认监听回环地址。需要对外暴露看板时请在前置反向代理。
+- 平台本身不存在的指标（macOS/Windows 的 inode、非 Linux 的 steal time）
+  上报为 `0`，而不是让快照失败。
 
-[Unreleased]: https://github.com/xuhongteng/wpal/compare/v1.0.0...HEAD
+[未发布]: https://github.com/xuhongteng/wpal/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/xuhongteng/wpal/releases/tag/v1.0.0
