@@ -593,6 +593,7 @@
 
   // ---------------------------------------------------------------- iStat Menus 极简原生资源消耗大户呈现
   let procSort = 'cpu';
+  let procViewMode = 'all';
   let procSearchQuery = '';
 
   function getProcIcon(name, cmd) {

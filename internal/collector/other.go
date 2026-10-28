@@ -6,8 +6,6 @@ import (
 	"os"
 	"runtime"
 	"sort"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/shirou/gopsutil/v4/cpu"
@@ -26,11 +24,13 @@ import (
 type otherCollector struct {
 	opts Options
 
-	prevCPU  []cpu.TimesStat
-	prevDisk map[string]disk.IOCountersStat
-	prevNet  map[string]net.IOCountersStat
-	prevProc map[int32]float64
-	prevAt   time.Time
+	prevTotalCPU cpu.TimesStat
+	hasPrevTotal bool
+	prevPerCore  []cpu.TimesStat
+	prevDisk     map[string]disk.IOCountersStat
+	prevNet      map[string]net.IOCountersStat
+	prevProc     map[int32]float64
+	prevAt       time.Time
 }
 
 func newCollector(opts Options) Collector {
@@ -75,13 +75,7 @@ func (c *otherCollector) Collect() (*Snapshot, error) {
 
 func (c *otherCollector) collectHost(now time.Time) Host {
 	hostname, _ := os.Hostname()
-	uptime := 0.0
-	if b, err := os.ReadFile("/proc/uptime"); err == nil {
-		f := strings.Fields(string(b))
-		if len(f) > 0 {
-			uptime, _ = strconv.ParseFloat(f[0], 64)
-		}
-	}
+	uptime := getPlatformUptime(now)
 	return Host{
 		Hostname: hostname,
 		Kernel:   runtime.GOOS + "/" + runtime.GOARCH,
@@ -118,23 +112,26 @@ func timesPct(cur, prev cpu.TimesStat) Breakdown {
 }
 
 func (c *otherCollector) collectCPU(dt float64) CPU {
-	times, err := cpu.Times(true)
+	curTotal, curPerCore, err := getPlatformCPUTimes()
 	if err != nil {
-		times = nil
+		curPerCore = nil
 	}
-	cur := times
-	prev := c.prevCPU
-	c.prevCPU = cur
 
 	total := Breakdown{Idle: 100}
-	if len(cur) > 0 && len(prev) == len(cur) {
-		total = timesPct(cur[0], prev[0])
+	if c.hasPrevTotal {
+		total = timesPct(curTotal, c.prevTotalCPU)
 	}
+	c.prevTotalCPU = curTotal
+	c.hasPrevTotal = (err == nil)
+
+	prevPerCore := c.prevPerCore
+	c.prevPerCore = curPerCore
+
 	percore := []Core{}
-	for i := range cur {
+	for i := range curPerCore {
 		p := Breakdown{Idle: 100}
-		if i < len(prev) {
-			p = timesPct(cur[i], prev[i])
+		if i < len(prevPerCore) {
+			p = timesPct(curPerCore[i], prevPerCore[i])
 		}
 		percore = append(percore, Core{
 			Busy: p.Busy, User: p.User, System: p.System,

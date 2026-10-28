@@ -177,24 +177,48 @@ func (r *Ring) Append(s Sample) error {
 
 // Query 返回 since 之后的采样（按时间升序）。
 func (r *Ring) Query(since time.Time) ([]Sample, error) {
+	return r.QueryDownsampled(since, 0)
+}
+
+// QueryDownsampled 返回 since 之后并降采样到最多 maxPoints 点的采样切片。
+func (r *Ring) QueryDownsampled(since time.Time, maxPoints int) ([]Sample, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
+	cut := since.Unix()
+
+	// 优先检查常驻内存窗口：若查询范围在内存环覆盖时间内，直接零磁盘 IO 返回
+	if len(r.mem) > 0 && r.mem[0].TS <= cut {
+		out := make([]Sample, 0, len(r.mem))
+		for _, s := range r.mem {
+			if s.TS >= cut {
+				out = append(out, s)
+			}
+		}
+		if maxPoints > 0 && len(out) > maxPoints {
+			return Downsample(out, maxPoints), nil
+		}
+		return out, nil
+	}
 
 	all, err := r.readAll()
 	if err != nil {
 		return nil, err
 	}
-	cut := since.Unix()
 	out := make([]Sample, 0, len(all))
 	for _, s := range all {
 		if s.TS >= cut {
 			out = append(out, s)
 		}
 	}
+	if maxPoints > 0 && len(out) > maxPoints {
+		return Downsample(out, maxPoints), nil
+	}
 	return out, nil
 }
 
 // readAll 读出文件中的全部有效记录。调用方需持有锁。
+// 通过计算环形偏移，将数万次分散的系统调用优化为最多 2 次连续大块读取。
 func (r *Ring) readAll() ([]Sample, error) {
 	hbuf := make([]byte, headerSize)
 	if _, err := r.file.ReadAt(hbuf, 0); err != nil {
@@ -205,17 +229,44 @@ func (r *Ring) readAll() ([]Sample, error) {
 	if n > uint64(r.cap) {
 		n = uint64(r.cap)
 	}
+	if n == 0 {
+		return nil, nil
+	}
+
+	startIdx := head - n
+	startSlot := int(startIdx % uint64(r.cap))
+
 	out := make([]Sample, 0, n)
-	buf := make([]byte, recordSize)
-	for i := uint64(0); i < n; i++ {
-		// 最老的记录在 head-n 的位置
-		idx := head - n + i
-		off := int64(headerSize) + int64(idx%uint64(r.cap))*recordSize
-		if _, err := r.file.ReadAt(buf, off); err != nil {
+	seg1Count := int(n)
+	if startSlot+seg1Count > r.cap {
+		seg1Count = r.cap - startSlot
+	}
+	seg2Count := int(n) - seg1Count
+
+	// 读取段 1（从 startSlot 至文件末尾或 head）
+	if seg1Count > 0 {
+		buf1 := make([]byte, seg1Count*recordSize)
+		off1 := int64(headerSize) + int64(startSlot)*int64(recordSize)
+		if _, err := r.file.ReadAt(buf1, off1); err != nil {
 			return out, nil
 		}
-		out = append(out, decodeSample(buf))
+		for i := 0; i < seg1Count; i++ {
+			out = append(out, decodeSample(buf1[i*recordSize:(i+1)*recordSize]))
+		}
 	}
+
+	// 读取段 2（环形回绕到文件起始段）
+	if seg2Count > 0 {
+		buf2 := make([]byte, seg2Count*recordSize)
+		off2 := int64(headerSize)
+		if _, err := r.file.ReadAt(buf2, off2); err != nil {
+			return out, nil
+		}
+		for i := 0; i < seg2Count; i++ {
+			out = append(out, decodeSample(buf2[i*recordSize:(i+1)*recordSize]))
+		}
+	}
+
 	return out, nil
 }
 

@@ -81,10 +81,10 @@ func DefaultRules() []Rule {
 			Hold: 60 * time.Second, Recover: 60 * time.Second,
 			Extract: maxInodePercent,
 			Detail: func(s *collector.Snapshot) string {
-				return i18n.Detail("alert.disk.detail", map[string]any{"mount": maxPartitionMount(s)})
+				return i18n.Detail("alert.inode.detail", map[string]any{"mount": maxInodeMount(s)})
 			},
 			Params: func(s *collector.Snapshot) map[string]any {
-				return map[string]any{"mount": maxPartitionMount(s)}
+				return map[string]any{"mount": maxInodeMount(s)}
 			},
 		},
 		{
@@ -135,6 +135,18 @@ func maxPartitionMount(s *collector.Snapshot) string {
 	for _, p := range s.Disk.Partitions {
 		if p.Percent > peak {
 			peak = p.Percent
+			mount = p.Mount
+		}
+	}
+	return mount
+}
+
+func maxInodeMount(s *collector.Snapshot) string {
+	mount := ""
+	peak := -1.0
+	for _, p := range s.Disk.Partitions {
+		if p.InodePercent > peak {
+			peak = p.InodePercent
 			mount = p.Mount
 		}
 	}

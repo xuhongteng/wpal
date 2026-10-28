@@ -168,7 +168,7 @@ func (s *Server) handleHistory(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, map[string]any{"ts": []int64{}, "count": 0, "range": rng})
 		return
 	}
-	samples, err := s.ring.Query(time.Now().Add(-time.Duration(seconds) * time.Second))
+	samples, err := s.ring.QueryDownsampled(time.Now().Add(-time.Duration(seconds)*time.Second), 400)
 	if err != nil {
 		writeJSON(w, map[string]any{"error": err.Error(), "range": rng})
 		return

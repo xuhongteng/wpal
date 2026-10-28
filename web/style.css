@@ -35,6 +35,9 @@
   --warn: #ff9500;
   --crit: #ff3b30;
 
+  --mem: var(--mac-purple);
+  --disk: var(--mac-orange);
+
   --mac-shadow-window: 0 30px 80px -15px rgba(15, 23, 42, 0.16),
                        0 0 0 1px rgba(255, 255, 255, 0.8) inset,
                        0 2px 6px rgba(15, 23, 42, 0.04);
@@ -81,6 +84,9 @@
   --ok: #30d158;
   --warn: #ff9f0a;
   --crit: #ff453a;
+
+  --mem: var(--mac-purple);
+  --disk: var(--mac-orange);
 
   --mac-shadow-window: 0 40px 100px -20px rgba(0, 0, 0, 0.85),
                        0 0 0 1px rgba(255, 255, 255, 0.12) inset;
@@ -1218,16 +1224,17 @@ body {
 .m-label { display: inline-block; }
 
 /* ── 响应式适配 ── */
-@media (max-width: 1200px) {
-  .macos-hero-deck { grid-template-columns: 1fr; }
-  .macos-widgets { grid-template-columns: repeat(2, 1fr); }
-  .macos-bento-bottom { grid-template-columns: 1fr; }
+@media (max-width: 1024px) {
+  .macos-quad-grid { grid-template-columns: 1fr; }
+  .macos-desktop { padding: 12px; }
 }
 @media (max-width: 768px) {
-  .macos-desktop { padding: 12px; }
+  .macos-desktop { padding: 8px; }
   .macos-window { border-radius: 14px; }
-  .macos-titlebar { flex-wrap: wrap; height: auto; padding: 10px 16px; gap: 10px; }
-  .macos-widgets { grid-template-columns: 1fr; }
+  .macos-titlebar { flex-wrap: wrap; height: auto; padding: 10px 14px; gap: 8px; }
+  .window-title-group { order: 1; }
+  .titlebar-right { order: 2; margin-left: auto; }
+  .titlebar-center { order: 3; width: 100%; justify-content: center; }
   .cores { grid-template-columns: repeat(2, 1fr); }
   .rows { grid-template-columns: 1fr; }
 }

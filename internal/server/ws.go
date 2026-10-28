@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/coder/websocket"
@@ -23,12 +25,30 @@ type samplerSource interface {
 	LatestJSON() []byte
 }
 
+// isSameOrigin 检查请求的 Origin 是否与当前 Host 一致，防御跨站 WebSocket 劫持 (CSWSH)。
+func isSameOrigin(r *http.Request) bool {
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		// 非浏览器或同源直接发起的请求无 Origin 请求头，直接放行
+		return true
+	}
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	// 严格校验 Origin 的 Host 与请求的 Host 一致（忽略大小写）
+	return strings.EqualFold(u.Host, r.Host)
+}
+
 // ServeWS 处理 WebSocket 升级与推送。
 func (h *wsHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
-	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		// 工具默认只监听回环地址，由反向代理负责 TLS 时同样不需要 Origin 校验。
-		InsecureSkipVerify: true,
-	})
+	// 1. Origin 跨站校验
+	if !isSameOrigin(r) {
+		http.Error(w, "Forbidden: Cross-site WebSocket request rejected", http.StatusForbidden)
+		return
+	}
+
+	conn, err := websocket.Accept(w, r, nil)
 	if err != nil {
 		return
 	}
@@ -45,14 +65,24 @@ func (h *wsHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	id, ch := h.sampler.Subscribe()
 	defer h.sampler.Unsubscribe(id)
 
-	// 写协程
+	// 写协程与心跳保活
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
+		pingTicker := time.NewTicker(30 * time.Second)
+		defer pingTicker.Stop()
+
 		for {
 			select {
 			case <-ctx.Done():
 				return
+			case <-pingTicker.C:
+				pingCtx, pingCancel := context.WithTimeout(ctx, 5*time.Second)
+				err := conn.Ping(pingCtx)
+				pingCancel()
+				if err != nil {
+					return
+				}
 			case msg, ok := <-ch:
 				if !ok {
 					return
@@ -67,11 +97,9 @@ func (h *wsHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// 读循环：只为感知客户端断开（浏览器不会发业务消息）
+	// 读循环：等待感知客户端断开（移除错误的 60s 读超时，避免无业务帧时人为掐断长连接）
 	for {
-		readCtx, readCancel := context.WithTimeout(ctx, 60*time.Second)
-		_, _, err := conn.Read(readCtx)
-		readCancel()
+		_, _, err := conn.Read(ctx)
 		if err != nil {
 			break
 		}

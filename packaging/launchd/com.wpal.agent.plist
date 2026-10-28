@@ -15,7 +15,7 @@
     <key>KeepAlive</key>
     <true/>
     <key>WorkingDirectory</key>
-    <string>/var/lib/wpal</string>
+    <string>/Library/Application Support/Wpal</string>
     <key>StandardOutPath</key>
     <string>/var/log/wpal.log</string>
     <key>StandardErrorPath</key>
