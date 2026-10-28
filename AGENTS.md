@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Wpal（微光）—— 轻量级跨平台服务器资源监控看板。单个静态二进制即可交付，前端通过 `embed.FS` 嵌入其中，WebSocket 每秒推送一帧。Go 1.23+。
+Wpal —— 轻量级跨平台服务器资源监控看板。单个静态二进制即可交付，前端通过 `embed.FS` 嵌入其中，WebSocket 每秒推送一帧。Go 1.23+。
 
 ## 语言约定（优先级最高）
 
@@ -10,6 +10,13 @@ Wpal（微光）—— 轻量级跨平台服务器资源监控看板。单个静
 - **以下内容保持原样，不得翻译**：Go 编译指令 `//go:build`、`//go:embed`；Shell shebang；命令行示例与代码块；标识符、函数名、文件路径、环境变量名。
 - **法律与治理类文档保持英文**：`CODE_OF_CONDUCT.md`、`SECURITY.md`、`NOTICE`。
 - 前端界面文案（`web/locales/*.json`）是产品功能而非注释，双语必须保持键集合一致（`tools/verify_i18n.py` 会校验），不受本约定影响。
+
+## 产品命名
+
+- 正式产品名只有 **Wpal**，标识符一律小写 `wpal`（二进制、systemd 服务、容器镜像、镜像 tag）。
+- 中文描述跟在名字后面，形式统一为 `Wpal - <中文描述>`；**不要给产品名加第二个名字**（如 `Wpal（XX）`），历史上出现过的中文别名均已废弃。
+- 前端界面标题以 `web/locales/*.json` 的 `app.title` 为准（`Wpal 监控` / `Wpal Monitor`），页面 `<title>` 与之一致。
+- `go.mod` 的 module 路径沿用 `mon`，它只是内部导入路径，不属于对外产品名，不要拿它当品牌。
 
 ## Setup commands
 
