@@ -23,10 +23,15 @@ dashboard in the browser — no Python, no Node, no container runtime, no databa
 | | |
 |---|---|
 | **Binary size** | 7 MB (all platforms, static, no cgo) |
-| **Idle memory** | ~11.5 MB RSS (measured) |
+| **Idle memory** | ~11.5 MB RSS on Linux, ~17 MB on macOS (measured; see note below) |
 | **Dependencies** | none — the web UI is embedded in the binary |
 | **Datastore** | bounded ring file on disk, never grows |
 | **Refresh** | 1 s sampling, streamed over WebSocket |
+
+> Memory note: the Go runtime baseline and resident code pages are noticeably
+> higher on macOS than on Linux. On one machine we measured a bare Go
+> `net/http` server at ~9.9 MB, Wpal headless at ~17 MB, and full mode at
+> ~20 MB, versus ~11.5 MB on Linux.
 
 ---
 
