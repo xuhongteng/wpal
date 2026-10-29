@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"mon/internal/collector"
+	"mon/internal/config"
 	"mon/internal/history"
 	"mon/internal/sampler"
 	"mon/internal/version"
@@ -19,6 +20,8 @@ import (
 type Options struct {
 	// BasePath 是部署在子路径下时的前缀，例如 "/monitor"。
 	BasePath string
+	// Agent 是边缘探针身份与标签配置。
+	Agent config.AgentConfig
 }
 
 // Server 是 HTTP 服务。
@@ -58,6 +61,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc(base+"/api/history", s.handleHistory)
 	s.mux.HandleFunc(base+"/api/events", s.handleEvents)
 	s.mux.HandleFunc(base+"/api/procs", s.handleProcs)
+	s.mux.HandleFunc(base+"/metrics", s.handleMetrics)
 	s.mux.HandleFunc(base+"/ws/stream", s.ws.ServeWS)
 	s.mux.HandleFunc(base+"/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)

@@ -55,6 +55,9 @@ func run() int {
 		topProcs = flag.Int("top", 0, "进程榜长度")
 		repeat   = flag.Int("repeat", 1, "--dump 的采样轮数")
 		interval = flag.Duration("interval", 0, "--dump 多轮采样之间的间隔")
+		headless = flag.Bool("headless", false, "以纯 Agent 探针模式运行（关闭 Web 界面与本地历史落盘，降低资源开销）")
+		cluster  = flag.String("cluster", "", "归属的集群或分组名称，覆盖配置文件")
+		nodeID   = flag.String("node-id", "", "节点唯一标识，覆盖配置文件")
 	)
 	flag.Parse()
 
@@ -86,6 +89,15 @@ func run() int {
 	}
 	if *topProcs > 0 {
 		cfg.Collect.TopProcesses = *topProcs
+	}
+	if *headless {
+		cfg.Agent.Headless = true
+	}
+	if *cluster != "" {
+		cfg.Agent.Cluster = *cluster
+	}
+	if *nodeID != "" {
+		cfg.Agent.NodeID = *nodeID
 	}
 
 	col := collector.New(collector.Options{
@@ -155,9 +167,9 @@ func runServer(cfg config.Config, col collector.Collector) error {
 		return err
 	}
 
-	// 历史环形存储
+	// 历史环形存储（Headless 纯探针模式下不启用历史落盘，降低磁盘占用与后台 IO）
 	var ring *history.Ring
-	if cfg.History.Enabled {
+	if cfg.History.Enabled && !cfg.Agent.Headless {
 		ring, err = history.Open(filepath.Join(dataDir, "history.db"), cfg.HistoryCapacity(), 360)
 		if err != nil {
 			return fmt.Errorf("打开历史存储失败: %w", err)
@@ -179,7 +191,16 @@ func runServer(cfg config.Config, col collector.Collector) error {
 	defer cancel()
 	go smp.Run(ctx)
 
-	srv := server.New(smp, ring, events, web.Sub(), server.Options{BasePath: cfg.Server.BasePath})
+	// Headless 纯探针模式不挂载前端静态文件，进一步收敛常驻内存
+	var webFS = web.Sub()
+	if cfg.Agent.Headless {
+		webFS = nil
+	}
+
+	srv := server.New(smp, ring, events, webFS, server.Options{
+		BasePath: cfg.Server.BasePath,
+		Agent:    cfg.Agent,
+	})
 
 	// 启动阶段（前端解压/压缩等）产生的临时堆内存还给操作系统，
 	// 让常驻 RSS 贴近真实工作集。
@@ -213,10 +234,16 @@ func runServer(cfg config.Config, col collector.Collector) error {
 	fmt.Printf("wpal %s\n", version.Get().String())
 	fmt.Printf("  监听   : %s%s\n", cfg.Server.Listen, cfg.Server.BasePath)
 	fmt.Printf("  采样   : 每 %s\n", collectDur)
-	if ring != nil {
-		fmt.Printf("  历史   : %s（留存 %s）\n", filepath.Join(dataDir, "history.db"), cfg.History.Retain)
+	if cfg.Agent.Headless {
+		fmt.Printf("  模式   : Headless 纯探针模式（关闭 Web 看板与磁盘历史）\n")
+		fmt.Printf("  指标   : http://%s%s/metrics\n", cfg.Server.Listen, cfg.Server.BasePath)
+	} else {
+		if ring != nil {
+			fmt.Printf("  历史   : %s（留存 %s）\n", filepath.Join(dataDir, "history.db"), cfg.History.Retain)
+		}
+		fmt.Printf("  看板   : http://%s%s/\n", cfg.Server.Listen, cfg.Server.BasePath)
+		fmt.Printf("  指标   : http://%s%s/metrics\n", cfg.Server.Listen, cfg.Server.BasePath)
 	}
-	fmt.Printf("  看板   : http://%s%s/\n", cfg.Server.Listen, cfg.Server.BasePath)
 
 	if err := httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err

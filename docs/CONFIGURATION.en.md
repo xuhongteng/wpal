@@ -141,6 +141,57 @@ warning ──value ≥ crit──▶ critical (fires immediately)
 warning/critical ──value < warn for `recover`──▶ resolved
 ```
 
+### `agent`
+
+Edge collector / node exporter configuration, designed for Prometheus ingestion and cluster management:
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `headless` | bool | `false` | Run as a headless probe agent (disables web UI and disk history file, minimizing resource usage). CLI flag: `--headless` |
+| `cluster` | string | `""` | Cluster or group identifier (e.g. `prod-k8s`, `edge-beijing`), injected as `cluster` label into exported metrics. CLI flag: `--cluster` |
+| `node_id` | string | `""` | Unique node identifier. Defaults to hostname if empty. CLI flag: `--node-id` |
+| `labels` | map[string]string | empty | Custom key-value labels injected into all exported metrics. Must match `^[a-zA-Z_][a-zA-Z0-9_]*$` |
+
+Example:
+
+```yaml
+agent:
+  headless: true
+  cluster: "prod-bj"
+  node_id: "node-c2-01"
+  labels:
+    env: "production"
+    role: "worker"
+```
+
+---
+
+## Prometheus Ingestion & Scraping
+
+Wpal exposes a standard Prometheus text format endpoint at `/metrics` (version 0.0.4) with zero external dependencies.
+It can be scraped directly by Prometheus, VictoriaMetrics, or vmagent.
+
+### Prometheus Scrape Configuration
+
+Add a job in `prometheus.yml`:
+
+```yaml
+scrape_configs:
+  - job_name: 'wpal_nodes'
+    scrape_interval: 5s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['192.168.1.10:8891', '192.168.1.11:8891']
+```
+
+Key metrics exported include:
+- `wpal_cpu_usage_ratio`, `wpal_cpu_core_usage_ratio{cpu="0"}`, `node_load1`
+- `node_memory_MemTotal_bytes`, `node_memory_MemUsed_bytes`, `node_memory_MemAvailable_bytes`
+- `node_filesystem_size_bytes`, `node_filesystem_free_bytes`, `node_filesystem_usage_ratio`
+- `node_disk_read_bytes_per_second`, `node_disk_written_bytes_per_second`
+- `node_network_receive_bytes_total`, `wpal_network_receive_bytes_per_second`
+- `wpal_uptime_seconds`, `wpal_build_info`
+
 ---
 
 ## Platform differences

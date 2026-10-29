@@ -140,6 +140,57 @@ warning ──≥ crit──▶ critical（立即触发）
 warning/critical ──持续 < warn 达 recover──▶ resolved
 ```
 
+### `agent`
+
+标准化边缘采集探针配置，专为 Prometheus 纳管与集群集中监控设计：
+
+| 键 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `headless` | bool | `false` | 纯探针模式。设为 `true` 时关闭 Web 看板挂载与本地历史落盘，大幅降低开销。命令行对应 `--headless` |
+| `cluster` | string | 空 | 节点归属的集群或分组标识（例如 `prod-k8s`, `edge-beijing`），自动注入到指标的 `cluster` 标签中。命令行对应 `--cluster` |
+| `node_id` | string | 空 | 节点唯一标识。留空默认使用系统 Hostname。命令行对应 `--node-id` |
+| `labels` | map[string]string | 空 | 自定义标签键值对，必须符合 Prometheus 标签格式（`^[a-zA-Z_][a-zA-Z0-9_]*$`），自动注入到所有导出指标中 |
+
+示例配置：
+
+```yaml
+agent:
+  headless: true
+  cluster: "prod-bj"
+  node_id: "node-c2-01"
+  labels:
+    env: "production"
+    role: "worker"
+```
+
+---
+
+## Prometheus 接入与集群抓取
+
+Wpal 原生提供遵循官方 `node_exporter` 规范的 `/metrics` 文本协议接口（无需外部依赖）。
+任何兼容 Prometheus 协议的系统（Prometheus、VictoriaMetrics、vmagent 等）均可直接接入。
+
+### Prometheus 抓取配置示例
+
+在 `prometheus.yml` 中添加抓取作业：
+
+```yaml
+scrape_configs:
+  - job_name: 'wpal_nodes'
+    scrape_interval: 5s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['192.168.1.10:8891', '192.168.1.11:8891']
+```
+
+核心导出指标涵盖：
+- `wpal_cpu_usage_ratio`、`wpal_cpu_core_usage_ratio{cpu="0"}`、`node_load1`
+- `node_memory_MemTotal_bytes`、`node_memory_MemUsed_bytes`、`node_memory_MemAvailable_bytes`
+- `node_filesystem_size_bytes`、`node_filesystem_free_bytes`、`node_filesystem_usage_ratio`
+- `node_disk_read_bytes_per_second`、`node_disk_written_bytes_per_second`
+- `node_network_receive_bytes_total`、`wpal_network_receive_bytes_per_second`
+- `wpal_uptime_seconds`、`wpal_build_info`
+
 ---
 
 ## 平台差异

@@ -45,6 +45,9 @@ type staticHandler struct {
 // newStaticHandler 构造静态资源处理器。
 func newStaticHandler(fsys fs.FS) *staticHandler {
 	h := &staticHandler{files: map[string]asset{}}
+	if fsys == nil {
+		return h
+	}
 	_ = fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return nil
@@ -124,6 +127,12 @@ func contentTypeOf(p string) string {
 
 // ServeHTTP 处理 / 与 /static/*。
 func (h *staticHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if len(h.files) == 0 {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("Wpal is running in headless mode. Prometheus metrics are available at /metrics\n"))
+		return
+	}
 	p := strings.TrimPrefix(r.URL.Path, "/")
 	if p == "" || p == "index.html" {
 		h.serveIndex(w, r)

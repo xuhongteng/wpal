@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -20,6 +21,7 @@ type Config struct {
 	Collect CollectConfig `yaml:"collect"`
 	History HistoryConfig `yaml:"history"`
 	Alerts  AlertsConfig  `yaml:"alerts"`
+	Agent   AgentConfig   `yaml:"agent"`
 }
 
 // ServerConfig 是服务监听相关配置。
@@ -53,6 +55,19 @@ type AlertsConfig struct {
 	Disk   Threshold `yaml:"disk"`
 	Inode  Threshold `yaml:"inode"`
 	Load   Threshold `yaml:"load"`
+}
+
+// AgentConfig 是标准化边缘采集探针相关配置。
+type AgentConfig struct {
+	// Headless 为 true 时关闭本地 Web 前端挂载与本地历史落盘，
+	// 以极致轻量探针形态运行（内存 < 6MB），专供 Prometheus 拉取或集中纳管。
+	Headless bool `yaml:"headless"`
+	// Cluster 是节点归属的集群或分组标识（例如 prod-k8s, edge-beijing）。
+	Cluster string `yaml:"cluster"`
+	// NodeID 是节点唯一标识，留空默认使用系统 Hostname。
+	NodeID string `yaml:"node_id"`
+	// Labels 是一组键值对标签，自动注入到导出的 Prometheus 指标中。
+	Labels map[string]string `yaml:"labels"`
 }
 
 // Threshold 是一条阈值规则。
@@ -89,6 +104,12 @@ func Default() Config {
 			Disk:   Threshold{Warn: 80, Crit: 90, Hold: "60s", Recover: "60s"},
 			Inode:  Threshold{Warn: 85, Crit: 95, Hold: "60s", Recover: "60s"},
 			Load:   Threshold{Warn: 1.5, Crit: 3.0, Hold: "45s", Recover: "30s"},
+		},
+		Agent: AgentConfig{
+			Headless: false,
+			Cluster:  "",
+			NodeID:   "",
+			Labels:   map[string]string{},
 		},
 	}
 }
@@ -148,7 +169,18 @@ func (c *Config) applyEnv() {
 	if v := getEnv("VIRTUAL_NICS"); v != "" {
 		c.Collect.IncludeVirtualNics = v == "1" || strings.EqualFold(v, "true")
 	}
+	if v := getEnv("HEADLESS"); v != "" {
+		c.Agent.Headless = v == "1" || strings.EqualFold(v, "true")
+	}
+	if v := getEnv("CLUSTER"); v != "" {
+		c.Agent.Cluster = v
+	}
+	if v := getEnv("NODE_ID"); v != "" {
+		c.Agent.NodeID = v
+	}
 }
+
+var prometheusLabelRegex = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 func (c *Config) validate() error {
 	if _, err := c.CollectDuration(); err != nil {
@@ -173,6 +205,11 @@ func (c *Config) validate() error {
 		}
 		if th.Crit < th.Warn {
 			return fmt.Errorf("告警阈值 %s 无效（crit 不能小于 warn）", name)
+		}
+	}
+	for k := range c.Agent.Labels {
+		if !prometheusLabelRegex.MatchString(k) {
+			return fmt.Errorf("agent.labels 键名 %q 不合法（必须符合 Prometheus 标签格式 ^[a-zA-Z_][a-zA-Z0-9_]*$）", k)
 		}
 	}
 	return nil

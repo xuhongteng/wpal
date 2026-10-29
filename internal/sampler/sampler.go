@@ -55,6 +55,16 @@ func New(col collector.Collector, interval, persist time.Duration,
 
 // Run 启动采样循环，直到 ctx 被取消。
 func (s *Sampler) Run(ctx context.Context) {
+	// 启动时立即执行一次采集，使服务启动瞬间即可响应 /metrics 与快照请求，无需等待第一个周期
+	if initialSnap, err := s.col.Collect(); err == nil {
+		if raw, err := json.Marshal(initialSnap); err == nil {
+			s.mu.Lock()
+			s.latest = initialSnap
+			s.rawJSON = raw
+			s.mu.Unlock()
+		}
+	}
+
 	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()
 
