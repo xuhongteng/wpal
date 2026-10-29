@@ -102,8 +102,12 @@ func (e *EventStore) Add(ev collector.Event) collector.Event {
 }
 
 // compactLocked 把事件文件重写为仅含内存里保留的最近 limit 条。
-// 调用方需持有写锁。采用「写临时文件 + 原子 rename」，
+// 调用方需持有写锁。采用「写临时文件 + rename」替换整份文件，
 // 中途失败时原文件保持完整，不会读出半截 JSONL。
+//
+// 跨平台注意：必须先关闭 e.file 再执行 rename。
+// Windows 不允许替换仍有打开句柄的文件，若先 rename 再关旧句柄，
+// os.Rename 会直接失败（Access is denied），压缩逻辑在 Windows 上等于失效。
 func (e *EventStore) compactLocked() {
 	tmp := e.path + ".tmp"
 	f, err := os.OpenFile(tmp, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o644)
@@ -133,18 +137,27 @@ func (e *EventStore) compactLocked() {
 		os.Remove(tmp)
 		return
 	}
+
+	// 先释放目标文件的句柄，否则 Windows 上无法替换。
+	old := e.file
+	e.file = nil
+	if old != nil {
+		_ = old.Close()
+	}
+
 	if err := os.Rename(tmp, e.path); err != nil {
+		// 替换失败：删掉临时文件，并把旧句柄重新打开，保证仍可继续追加。
 		os.Remove(tmp)
+		if nf, oerr := os.OpenFile(e.path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644); oerr == nil {
+			e.file = nf
+		}
 		return
 	}
 
-	// rename 后旧的追加句柄仍指向已被替换的 inode，必须重开。
 	nf, err := os.OpenFile(e.path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
-		// 打不开新文件时保留旧句柄（虽然指向旧 inode，但至少还能写）。
 		return
 	}
-	e.file.Close()
 	e.file = nf
 	e.lines = n
 }
