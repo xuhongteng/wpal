@@ -191,6 +191,13 @@ scrape_configs:
 - `node_network_receive_bytes_total`、`wpal_network_receive_bytes_per_second`
 - `wpal_uptime_seconds`、`wpal_build_info`
 
+### Grafana 看板
+
+仓库内附带一份可直接导入的看板：`docs/grafana/wpal-dashboard.json`。
+在 Grafana 中选择「Dashboards → Import → Upload JSON file」，
+导入时把数据源指向已抓取 Wpal 的 Prometheus 实例即可。
+看板含 9 个面板，并带一个 `instance` 变量用于在多节点间切换。
+
 ---
 
 ## 平台差异
@@ -199,7 +206,8 @@ scrape_configs:
 |---|---|---|---|
 | inode 使用率 | ✅ | 不适用（记 0） | 不适用（记 0） |
 | steal time | ✅ | 不适用 | 不适用 |
-| 磁盘繁忙率 | ✅ | 部分支持 | 取决于 PDH 计数器 |
+| 磁盘繁忙率 | ✅ | 不适用（记 0） | 取决于 PDH 计数器 |
+| 磁盘 I/O 读写速率 | ✅ | 不适用（内核不提供读/写拆分） | ✅ |
 | swap | ✅ | ✅（交换文件） | ✅（页面文件） |
 
 平台不具备的指标一律记 `0`，绝不会导致整次采集失败。

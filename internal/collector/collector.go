@@ -200,6 +200,11 @@ type Options struct {
 	TopProcesses int
 	// IncludeVirtualNics 是否统计 docker0/veth/br-* 等虚拟网卡。
 	IncludeVirtualNics bool
+	// SkipProcessDetails 跳过进程榜明细，只保留进程数与线程数这类聚合值。
+	//
+	// 供 Headless 探针模式使用：Prometheus 端点只导出进程/线程总数，
+	// 并不导出 Top-N 进程列表，因此没有必要枚举、排序并补全命令行。
+	SkipProcessDetails bool
 }
 
 // Collector 采集器接口。

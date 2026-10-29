@@ -80,11 +80,13 @@ func (e *EventStore) Add(ev collector.Event) collector.Event {
 
 	ev.ID = e.nextID
 	e.nextID++
-	line, err := json.Marshal(ev)
-	if err == nil {
-		// 落盘失败不应影响内存里的事件记录。
-		if _, werr := e.file.Write(append(line, '\n')); werr == nil {
-			e.lines++
+	if e.file != nil {
+		line, err := json.Marshal(ev)
+		if err == nil {
+			// 落盘失败不应影响内存里的事件记录。
+			if _, werr := e.file.Write(append(line, '\n')); werr == nil {
+				e.lines++
+			}
 		}
 	}
 	e.items = append(e.items, ev)
@@ -93,7 +95,7 @@ func (e *EventStore) Add(ev collector.Event) collector.Event {
 	}
 
 	// 文件膨胀到阈值就重写为最近 limit 条，避免无限增长。
-	if e.lines > e.limit*eventsCompactFactor {
+	if e.file != nil && e.lines > e.limit*eventsCompactFactor {
 		e.compactLocked()
 	}
 	return ev
@@ -172,5 +174,20 @@ func (e *EventStore) Total() int {
 func (e *EventStore) Close() error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	if e.file == nil {
+		return nil
+	}
 	return e.file.Close()
+}
+
+// NewMemoryEventStore 创建一个纯内存的事件存储：不打开任何文件、不落盘。
+//
+// 供 Headless 探针模式使用——探针没有 Web 看板，
+// 事件流只用于本地展示，写盘纯属浪费磁盘 IO。
+func NewMemoryEventStore(limit int) *EventStore {
+	if limit <= 0 {
+		limit = 500
+	}
+	// file 保持 nil，Add 与 Close 均已对 nil 做保护。
+	return &EventStore{limit: limit, nextID: 1}
 }

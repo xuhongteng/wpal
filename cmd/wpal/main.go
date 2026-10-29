@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"syscall"
 	"time"
@@ -105,6 +106,7 @@ func run() int {
 		Label:              cfg.Collect.Label,
 		TopProcesses:       cfg.Collect.TopProcesses,
 		IncludeVirtualNics: cfg.Collect.IncludeVirtualNics,
+		SkipProcessDetails: cfg.Agent.Headless,
 	})
 	defer col.Close()
 
@@ -177,11 +179,18 @@ func runServer(cfg config.Config, col collector.Collector) error {
 		defer ring.Close()
 	}
 
-	events, err := history.OpenEventStore(filepath.Join(dataDir, "events.jsonl"), 500)
-	if err != nil {
-		return fmt.Errorf("打开事件存储失败: %w", err)
+	// Headless 探针不为本地告警事件落盘：事件流只服务于 Web 看板，
+	// 探针模式没有看板，写盘只会产生无意义的磁盘 IO。
+	var events *history.EventStore
+	if cfg.Agent.Headless {
+		events = history.NewMemoryEventStore(500)
+	} else {
+		events, err = history.OpenEventStore(filepath.Join(dataDir, "events.jsonl"), 500)
+		if err != nil {
+			return fmt.Errorf("打开事件存储失败: %w", err)
+		}
+		defer events.Close()
 	}
-	defer events.Close()
 
 	engine := alerts.New(buildRules(cfg))
 
@@ -201,6 +210,12 @@ func runServer(cfg config.Config, col collector.Collector) error {
 		BasePath: cfg.Server.BasePath,
 		Agent:    cfg.Agent,
 	})
+
+	// Headless 探针每秒只做一两次 ps 调用，几乎没有并行负载。
+	// 把可用 P 数压到 2 可以省下每个 P 的分配缓存，并减少空闲调度开销。
+	if cfg.Agent.Headless {
+		runtime.GOMAXPROCS(2)
+	}
 
 	// 启动阶段（前端解压/压缩等）产生的临时堆内存还给操作系统，
 	// 让常驻 RSS 贴近真实工作集。
