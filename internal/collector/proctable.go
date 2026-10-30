@@ -19,25 +19,43 @@ type procSample struct {
 	Threads int
 }
 
-// collectProcs 采集进程榜，并顺带返回进程总数与线程总数。
+// procStats 汇总一次进程采集的聚合结果。
+type procStats struct {
+	Threads int
+	Procs   int
+	Running int
+	Blocked int
+}
+
+// collectProcs 采集进程榜，并顺带返回进程计数类聚合值。
 //
 // 三级流水线：
 //  1. readProcTable 批量取全表（每平台一次或极少数几次系统调用）；
 //  2. 与上一周期做 CPU 时间差分得到占比，并按 CPU / RSS 各取前 N；
 //  3. fillCommands 只为最终上榜的进程补全命令行，避免全表取命令行。
-func (c *otherCollector) collectProcs(dt float64, totalMem float64) (byCPU, byMem []Proc, threads, procCount int) {
+func (c *otherCollector) collectProcs(dt float64, totalMem float64) (byCPU, byMem []Proc, st procStats) {
 	// Headless 探针模式只需要进程数与线程数这类聚合值，
 	// Top-N 明细既不上报给 Prometheus，也没有 UI 会展示，直接跳过。
 	if c.opts.SkipProcessDetails {
 		n, t := countProcsAndThreads()
-		return []Proc{}, []Proc{}, t, n
+		return []Proc{}, []Proc{}, procStats{Threads: t, Procs: n}
 	}
 
 	samples, threads, err := readProcTable()
 	if err != nil {
-		return []Proc{}, []Proc{}, 0, 0
+		return []Proc{}, []Proc{}, procStats{}
 	}
-	procCount = len(samples)
+	st = procStats{Threads: threads, Procs: len(samples)}
+	for _, sp := range samples {
+		switch sp.Status {
+		case "running":
+			st.Running++
+		case "waiting", "stopped":
+			// 近似映射：macOS 的 waiting/stopped 与 Linux 的 D/T 态语义接近，
+			// 都表示进程当前无法进入运行队列。
+			st.Blocked++
+		}
+	}
 
 	// 必须在覆盖 prevProc 之前完成差值计算，否则 CPU 占比恒为 0。
 	prevProc := c.prevProc
@@ -131,5 +149,5 @@ func (c *otherCollector) collectProcs(dt float64, totalMem float64) (byCPU, byMe
 		}
 	}
 
-	return byCPU, byMem, threads, procCount
+	return byCPU, byMem, st
 }

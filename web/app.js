@@ -548,6 +548,38 @@
     }
   }
 
+  // 状态栏右侧的系统健康摘要：句柄水位与进程调度状态。
+  // 这两项在容量类指标里看不出来，却是句柄泄漏、进程 D 态堆积的直接信号。
+  function renderSysMeta(s) {
+    const el = $('st-meta');
+    if (!el) return;
+    const sys = s.sys || {};
+    const parts = [];
+    if (sys.fd_max > 0) {
+      parts.push(t('sys.fd', { used: compactInt(sys.fd_used || 0), max: compactInt(sys.fd_max) }));
+    }
+    if ((sys.procs_running || 0) + (sys.procs_blocked || 0) > 0) {
+      parts.push(t('sys.procs', { running: sys.procs_running || 0, blocked: sys.procs_blocked || 0 }));
+    }
+    el.textContent = parts.join(' · ');
+  }
+
+  // compactInt 把大数字压成紧凑形式，适合状态栏窄位展示。
+  // 中文用「万/亿」，英文用 k/M，避免英文界面里冒出中文字符。
+  function compactInt(v) {
+    const n = Number(v) || 0;
+    const zh = !window.I18N || window.I18N.lang === 'zh-CN';
+    if (zh) {
+      if (n >= 1e8) return `${(n / 1e8).toFixed(1)}亿`;
+      if (n >= 1e4) return `${(n / 1e4).toFixed(1)}万`;
+      return String(n);
+    }
+    if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
+    if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+    if (n >= 1e3) return `${(n / 1e3).toFixed(1)}k`;
+    return String(n);
+  }
+
   function renderMemRows(s) {
     const m = s.mem || {};
     const box = $('mem-rows');
@@ -580,9 +612,14 @@
     const parts = (s.disk || {}).partitions || [];
     const box = $('disk-rows');
     if (!box) return;
-    box.innerHTML = parts.map((p) =>
-      rowHTML(p.mount, p.percent, 'var(--disk)', t('quad.disk.row', { pct: nf(p.percent, 1), free: bytes(p.free) }))
-    ).join('') || `<div class="clear-notice">${t('empty.data')}</div>`;
+    box.innerHTML = parts.map((p) => {
+      let label = t('quad.disk.row', { pct: nf(p.percent, 1), free: bytes(p.free) });
+      // inode 与容量是两套独立资源：容量还有很多而 inode 先耗尽同样会导致写入失败。
+      // 仅在 inode 占用达到 1% 时才追加，避免绝大多数文件系统上制造噪音。
+      const ino = p.inode_percent || 0;
+      if (ino >= 1) label += ` · ${t('disk.inode', { pct: nf(ino, 1) })}`;
+      return rowHTML(p.mount, p.percent, 'var(--disk)', label);
+    }).join('') || `<div class="clear-notice">${t('empty.data')}</div>`;
     const ios = (s.disk || {}).io || [];
     const top = ios[0];
     if (mode === 'live' && $('disk-hint')) {
@@ -774,6 +811,7 @@
     renderNetRows(s);
     renderDiskRows(s);
     renderProcs(s);
+    renderSysMeta(s);
     renderAlerts(s);
     if (mode === 'live') {
       pushLive(s);

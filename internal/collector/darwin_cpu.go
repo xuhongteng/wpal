@@ -20,6 +20,7 @@ import (
 //go:cgo_import_dynamic libc_host_processor_info host_processor_info "/usr/lib/libSystem.B.dylib"
 //go:cgo_import_dynamic libc_mach_task_self mach_task_self "/usr/lib/libSystem.B.dylib"
 //go:cgo_import_dynamic libc_vm_deallocate vm_deallocate "/usr/lib/libSystem.B.dylib"
+//go:cgo_import_dynamic libc_host_statistics64 host_statistics64 "/usr/lib/libSystem.B.dylib"
 
 //go:linkname syscall_syscall syscall.syscall
 func syscall_syscall(fn, a1, a2, a3 uintptr) (r1, r2 uintptr, err error)
@@ -41,6 +42,9 @@ var libc_mach_task_self byte
 
 //go:linkname libc_vm_deallocate libc_vm_deallocate
 var libc_vm_deallocate byte
+
+//go:linkname libc_host_statistics64 libc_host_statistics64
+var libc_host_statistics64 byte
 
 const (
 	// Mach host/processor 相关的常数定义（对应 mach/host_info.h 与 mach/processor_info.h）
@@ -149,4 +153,66 @@ func getPlatformUptime(now time.Time) float64 {
 		}
 	}
 	return 0.0
+}
+
+// vmStatistics64 对应 mach/vm_statistics.h 的 struct vm_statistics64。
+// 字段顺序与大小必须与内核保持一致，HOST_VM_INFO64_COUNT = 152 字节 / 4 = 38。
+type vmStatistics64 struct {
+	FreeCount           uint32
+	ActiveCount         uint32
+	InactiveCount       uint32
+	WireCount           uint32
+	ZeroFillCount       uint64
+	Reactivations       uint64
+	Pageins             uint64
+	Pageouts            uint64
+	Faults              uint64
+	CowFaults           uint64
+	Lookups             uint64
+	Hits                uint64
+	Purges              uint64
+	PurgeableCount      uint32
+	SpeculativeCount    uint32
+	Decompressions      uint64
+	Compressions        uint64
+	Swapins             uint64
+	Swapouts            uint64
+	CompressorPageCount uint32
+	ThrottledCount      uint32
+	ExternalPageCount   uint32
+	InternalPageCount   uint32
+	TotalUncompressed   uint64
+}
+
+const (
+	hostVMInfo64Flavor = 4
+	hostVMInfo64Count  = 38
+)
+
+// getPlatformMemCache 通过 Mach 的 HOST_VM_INFO64 取文件页统计，
+// 用于填充「缓存缓冲」一栏。macOS 的内核不提供 free/buffers 这一套
+// Linux 语义，可类比的是 external（file-backed）页数量。
+func getPlatformMemCache() (cached, shared uint64) {
+	hostPort, _, _ := syscall_syscall(uintptr(unsafe.Pointer(&libc_mach_host_self)), 0, 0, 0)
+	if hostPort == 0 {
+		return 0, 0
+	}
+
+	var vm vmStatistics64
+	count := uint32(hostVMInfo64Count)
+	r, _, _ := syscall_syscall6(
+		uintptr(unsafe.Pointer(&libc_host_statistics64)),
+		hostPort,
+		uintptr(hostVMInfo64Flavor),
+		uintptr(unsafe.Pointer(&vm)),
+		uintptr(unsafe.Pointer(&count)),
+		0, 0,
+	)
+	if r != 0 {
+		return 0, 0
+	}
+
+	pageSize := uint64(unix.Getpagesize())
+	// external 页即文件缓存，对应活动监视器里的「已缓存文件」。
+	return uint64(vm.ExternalPageCount) * pageSize, 0
 }

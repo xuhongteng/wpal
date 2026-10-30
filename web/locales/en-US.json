@@ -105,5 +105,8 @@
   "alert.swap.detail": "{used_gib} GiB swap occupied",
   "alert.disk.detail": "Mount {mount}",
   "alert.inode.detail": "Mount {mount}",
-  "alert.load.detail": "1-min load {load1}"
+  "alert.load.detail": "1-min load {load1}",
+  "sys.fd": "FD {used} / {max}",
+  "sys.procs": "run {running} · blocked {blocked}",
+  "disk.inode": "inode {pct}%"
 }

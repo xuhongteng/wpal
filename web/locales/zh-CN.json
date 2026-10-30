@@ -105,5 +105,8 @@
   "alert.swap.detail": "Swap 已用 {used_gib} GiB",
   "alert.disk.detail": "挂载点 {mount}",
   "alert.inode.detail": "挂载点 {mount}",
-  "alert.load.detail": "1分钟负载 {load1}"
+  "alert.load.detail": "1分钟负载 {load1}",
+  "sys.fd": "句柄 {used} / {max}",
+  "sys.procs": "运行 {running} · 阻塞 {blocked}",
+  "disk.inode": "inode {pct}%"
 }

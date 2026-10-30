@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"golang.org/x/sys/unix"
 )
 
 // macBulkProcArgs 是一次性拉取整张进程表的字段清单。
@@ -256,4 +258,19 @@ func countProcsAndThreads() (procs, threads int) {
 		}
 	}
 	return procs, threads
+}
+
+// platformFileDescriptors 返回系统级的文件句柄使用量与上限。
+//
+// macOS 通过两个 sysctl 暴露全局计数：kern.num_files（已分配）与
+// kern.maxfiles（系统上限）。句柄耗尽会导致进程无法打开新文件或 socket，
+// 是生产环境常见的隐性故障，因此这两项值得单独上报。
+func platformFileDescriptors() (used, max int) {
+	if v, err := unix.SysctlUint32("kern.num_files"); err == nil {
+		used = int(v)
+	}
+	if v, err := unix.SysctlUint32("kern.maxfiles"); err == nil {
+		max = int(v)
+	}
+	return used, max
 }

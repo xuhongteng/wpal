@@ -64,9 +64,9 @@ func (c *otherCollector) Collect() (*Snapshot, error) {
 	snap.Mem = c.collectMem()
 	snap.Disk = c.collectDisk(dt)
 	snap.Net = c.collectNet(dt)
-	byCPU, byMem, threads, procCount := c.collectProcs(dt, snap.Mem.Total)
+	byCPU, byMem, st := c.collectProcs(dt, snap.Mem.Total)
 	snap.Procs, snap.ProcsMem = byCPU, byMem
-	snap.Sys = c.collectSys(threads, procCount)
+	snap.Sys = c.collectSys(st)
 
 	c.prevAt = now
 	return snap, nil
@@ -184,15 +184,25 @@ func (c *otherCollector) collectMem() Mem {
 	if err != nil {
 		sw = &mem.SwapMemoryStat{}
 	}
+	// gopsutil 在 macOS 上不填 Cached/Buffers/Shared，这里用 Mach 的
+	// 文件页统计补齐缓存一栏；其他平台仍使用 gopsutil 的返回值。
+	cached, shared := getPlatformMemCache()
+	if cached == 0 {
+		cached = vm.Cached
+	}
+	if shared == 0 {
+		shared = vm.Shared
+	}
+
 	return Mem{
 		Total:       float64(vm.Total),
 		Used:        float64(vm.Used),
 		Available:   float64(vm.Available),
 		Free:        float64(vm.Free),
 		Percent:     round1(vm.UsedPercent),
-		Cached:      float64(vm.Cached),
+		Cached:      float64(cached),
 		Buffers:     float64(vm.Buffers),
-		Shared:      float64(vm.Shared),
+		Shared:      float64(shared),
 		SwapTotal:   float64(sw.Total),
 		SwapUsed:    float64(sw.Used),
 		SwapFree:    float64(sw.Free),
@@ -219,6 +229,11 @@ func (c *otherCollector) collectDisk(dt float64) Disk {
 				Used:    usage.Used,
 				Free:    usage.Free,
 				Percent: round1(usage.UsedPercent),
+				// disk.Usage 本来就返回 inode 数据，之前被整体丢弃，
+				// 导致 macOS/Windows 上「inode 使用率」告警规则永远无法触发。
+				InodePercent: round1(usage.InodesUsedPercent),
+				InodeTotal:   usage.InodesTotal,
+				InodeFree:    usage.InodesFree,
 			})
 		}
 	}
@@ -317,9 +332,14 @@ func (c *otherCollector) collectNet(dt float64) Net {
 
 // collectSys 汇总系统级指标。procCount 由 collectProcs 一并返回，
 // 避免为了拿进程数量再枚举一次进程表。
-func (c *otherCollector) collectSys(threads, procCount int) Sys {
+func (c *otherCollector) collectSys(st procStats) Sys {
+	used, max := platformFileDescriptors()
 	return Sys{
-		Procs:   procCount,
-		Threads: threads,
+		Procs:        st.Procs,
+		Threads:      st.Threads,
+		ProcsRunning: st.Running,
+		ProcsBlocked: st.Blocked,
+		FDUsed:       used,
+		FDMax:        max,
 	}
 }

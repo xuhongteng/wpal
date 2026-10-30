@@ -192,22 +192,16 @@ Key metrics exported include:
 - `node_network_receive_bytes_total`, `wpal_network_receive_bytes_per_second`
 - `wpal_uptime_seconds`, `wpal_build_info`
 
-### Grafana dashboard
-
-A ready-to-import dashboard ships in `docs/grafana/wpal-dashboard.json`.
-Use "Dashboards → Import → Upload JSON file" and point the data source at the
-Prometheus instance scraping Wpal. It contains 9 panels and an `instance`
-variable for switching between nodes.
-
 ---
 
 ## Platform differences
 
 | Metric | Linux | macOS | Windows |
 |---|---|---|---|
-| inode usage | ✅ | n/a (reported as 0) | n/a (reported as 0) |
+| inode usage | ✅ | ✅ (APFS) | depends on volume format |
 | steal time | ✅ | n/a | n/a |
 | disk busy ratio | ✅ | n/a (reported as 0) | depends on PDH counters |
+| open file descriptors | ✅ | ✅ (kern.num_files) | not yet exposed |
 | disk I/O read/write rate | ✅ | n/a (kernel exposes no read/write split) | ✅ |
 | swap | ✅ | ✅ (swapfile) | ✅ (pagefile) |
 

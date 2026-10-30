@@ -68,3 +68,9 @@ func countProcsAndThreads() (int, int) {
 	}
 	return len(samples), threads
 }
+
+// platformFileDescriptors 在非 macOS 平台上暂不提供句柄计数，返回 0。
+func platformFileDescriptors() (used, max int) { return 0, 0 }
+
+// getPlatformMemCache 在非 macOS 平台上返回 0（由 gopsutil 的 Cached 字段提供）。
+func getPlatformMemCache() (cached, shared uint64) { return 0, 0 }
