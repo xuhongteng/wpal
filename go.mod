@@ -1,11 +1,11 @@
 module mon
 
-go 1.23.4
+go 1.26.0
 
 require (
 	github.com/coder/websocket v1.8.12
 	github.com/shirou/gopsutil/v4 v4.24.5
-	golang.org/x/sys v0.20.0
+	golang.org/x/sys v0.49.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
