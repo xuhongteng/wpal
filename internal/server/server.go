@@ -53,15 +53,44 @@ func New(s *sampler.Sampler, ring *history.Ring, events *history.EventStore, web
 // Handler 返回根处理器。
 func (s *Server) Handler() http.Handler { return s.mux }
 
+// withHost 为将来的多机汇聚预留 host 维度。
+//
+// 当前所有数据都来自本机，因此：不传 host 或传本机标识时正常服务；
+// 传入其它 host 时明确返回 400，而不是静默返回本机数据 ——
+// 后者会让调用方误以为拿到了目标机器的指标，是更难排查的错误。
+func (s *Server) withHost(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		host := r.URL.Query().Get("host")
+		if host == "" || host == "local" {
+			next(w, r)
+			return
+		}
+		local := ""
+		if snap := s.sampler.Latest(); snap != nil {
+			local = snap.Host.NodeID
+			if local == "" {
+				local = snap.Host.Hostname
+			}
+		}
+		if local != "" && host == local {
+			next(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("multi-host querying is not supported yet; omit ?host= or use this node's id\n"))
+	}
+}
+
 func (s *Server) routes() {
 	base := strings.TrimSuffix(s.opts.BasePath, "/")
 
-	s.mux.HandleFunc(base+"/api/health", s.handleHealth)
-	s.mux.HandleFunc(base+"/api/snapshot", s.handleSnapshot)
-	s.mux.HandleFunc(base+"/api/history", s.handleHistory)
-	s.mux.HandleFunc(base+"/api/events", s.handleEvents)
-	s.mux.HandleFunc(base+"/api/procs", s.handleProcs)
-	s.mux.HandleFunc(base+"/metrics", s.handleMetrics)
+	s.mux.HandleFunc(base+"/api/health", s.withHost(s.handleHealth))
+	s.mux.HandleFunc(base+"/api/snapshot", s.withHost(s.handleSnapshot))
+	s.mux.HandleFunc(base+"/api/history", s.withHost(s.handleHistory))
+	s.mux.HandleFunc(base+"/api/events", s.withHost(s.handleEvents))
+	s.mux.HandleFunc(base+"/api/procs", s.withHost(s.handleProcs))
+	s.mux.HandleFunc(base+"/metrics", s.withHost(s.handleMetrics))
 	s.mux.HandleFunc(base+"/ws/stream", s.ws.ServeWS)
 	s.mux.HandleFunc(base+"/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)

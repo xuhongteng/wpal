@@ -23,6 +23,11 @@ var macBulkProcArgs = []string{"-axo", "pid=,ppid=,uid=,user=,rss=,time=,stat=,c
 // MemoryInfo / NumThreads 每次都会 fork 一个 ps 子进程。近千个进程乘以数次调用
 // 约等于 4700 次进程创建，实测单次采集被拖到 10 秒以上。
 // 这里改为「整表两次调用」，把子进程数量从数千降到 2。
+// readProcTable 只负责进程表（温档）。
+//
+// 线程统计（ps -axM）已拆到 sampleThreads，由冷档调用：
+// ps -axM 的输出接近 600KB，是三次调用里最贵、分配最多的一次，
+// 没有必要跟着进程榜一起按温档频率跑。
 func readProcTable() ([]procSample, int, error) {
 	cmd := exec.Command("ps", macBulkProcArgs...)
 	cmd.Env = append(cmd.Environ(), "LC_ALL=C")
@@ -63,8 +68,44 @@ func readProcTable() ([]procSample, int, error) {
 		})
 	}
 
-	threads := countThreads(samples)
-	return samples, threads, nil
+	// 线程数由冷档单独采样，这里不填。
+	return samples, 0, nil
+}
+
+// sampleThreads 是冷档采集项：统计系统线程总数与各进程线程数。
+//
+// 返回的 map 供调用方回填到已缓存的进程榜条目上。
+// 与 readProcTable 分开的原因是它单独一次 ps -axM 就要约 40ms CPU
+// 并产生近 600KB 输出，属于全场最贵的采集之一。
+func sampleThreads() (perPID map[int32]int, total int) {
+	perPID = make(map[int32]int, 1200)
+
+	cmd := exec.Command("ps", "-axM")
+	cmd.Env = append(cmd.Environ(), "LC_ALL=C")
+	out, err := cmd.Output()
+	if err != nil {
+		return perPID, 0
+	}
+
+	last := int32(-1)
+	for _, line := range strings.Split(string(out), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+		// ps -M 的续行 PID 列为空，需要沿用上一个有效 PID。
+		// 只有当解析出的数字是合理的 PID 时才认定为新 PID，
+		// 避免把 %CPU 之类的整数误判成 pid。
+		if v, err := strconv.ParseInt(fields[1], 10, 32); err == nil && v > 0 {
+			last = int32(v)
+		}
+		if last < 0 {
+			continue
+		}
+		perPID[last]++
+		total++
+	}
+	return perPID, total
 }
 
 // splitBulkProcLine 把一行 ps 输出切成前 7 个定长字段与行尾的进程名。

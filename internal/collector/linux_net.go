@@ -26,13 +26,8 @@ var tcpStates = map[string]string{
 
 // collectNet 采集网卡流量速率与 TCP 连接状态分布。
 func (c *linuxCollector) collectNet(dt float64) Net {
-	ifaces := c.collectIfaces(dt)
-	tcp := c.collectTCP()
-	total := 0
-	for _, v := range tcp {
-		total += v
-	}
-	return Net{Interfaces: ifaces, TCP: tcp, TCPTotal: total}
+	// TCP 状态属于冷档，由 Collect 单独调度 collectTCP 后合并。
+	return Net{Interfaces: c.collectIfaces(dt)}
 }
 
 func (c *linuxCollector) collectIfaces(dt float64) []Iface {

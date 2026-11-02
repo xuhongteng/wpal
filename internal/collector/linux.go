@@ -60,6 +60,17 @@ type linuxCollector struct {
 	pageSize  int64
 	uidNames  map[int]string
 	diskMajor map[string]bool // major:minor -> 整盘
+
+	// 温档（进程榜）缓存：到点才重新枚举，其余帧复用上次结果。
+	procAt         time.Time
+	cachedProcs    []Proc
+	cachedProcsMem []Proc
+	cachedThreads  int
+
+	// 冷档缓存：TCP 连接状态。
+	slowAt         time.Time
+	cachedTCP      map[string]int
+	cachedTCPTotal int
 }
 
 func newCollector(opts Options) Collector {
@@ -102,14 +113,44 @@ func (c *linuxCollector) Collect() (*Snapshot, error) {
 		ActiveAlerts: []ActiveAlert{},
 	}
 
+	// ---- 热档：每帧都采 ----
 	snap.Host = c.collectHost(now)
 	snap.CPU = c.collectCPU(now, dt)
 	snap.Mem = c.collectMem()
 	snap.Disk = c.collectDisk(dt)
-	snap.Net = c.collectNet(dt)
-	byCPU, byMem, threads := c.collectProcs(dt, snap.Mem.Total)
-	snap.Procs, snap.ProcsMem = byCPU, byMem
-	snap.Sys = c.collectSys(threads, snap.CPU)
+	snap.Net = c.collectNet(dt) // 只含网卡吞吐，TCP 由冷档补
+
+	// ---- 温档：进程榜 ----
+	//
+	// 进程榜不需要秒级：排名变化远慢于 1Hz，而枚举全表要为每个进程
+	// 读取 /proc/<pid> 下的多个文件，进程多时同样不便宜。
+	if shouldSample(c.procAt, now, c.opts.ProcessInterval) {
+		// 差分间隔用上次进程采样的实际间隔，不能用主循环 dt，
+		// 否则占比会被降频比例稀释。见 sampleDelta 的说明。
+		procDt := sampleDelta(c.procAt, now, c.opts.ProcessInterval)
+		byCPU, byMem, threads := c.collectProcs(procDt, snap.Mem.Total)
+		c.cachedProcs, c.cachedProcsMem = byCPU, byMem
+		c.cachedThreads = threads
+		c.procAt = now
+	}
+	snap.Procs, snap.ProcsMem = c.cachedProcs, c.cachedProcsMem
+
+	// ---- 冷档：TCP 连接状态 ----
+	//
+	// 需要遍历 /proc/net/tcp 与 tcp6 全部条目，连接数多时开销可观，
+	// 而它只用于界面上的一行连接数提示。
+	if shouldSample(c.slowAt, now, c.opts.SlowInterval) {
+		c.cachedTCP = c.collectTCP()
+		total := 0
+		for _, v := range c.cachedTCP {
+			total += v
+		}
+		c.cachedTCPTotal = total
+		c.slowAt = now
+	}
+	snap.Net.TCP, snap.Net.TCPTotal = c.cachedTCP, c.cachedTCPTotal
+
+	snap.Sys = c.collectSys(c.cachedThreads, snap.CPU)
 
 	c.prevAt = now
 	return snap, nil
@@ -135,6 +176,7 @@ func (c *linuxCollector) collectHost(now time.Time) Host {
 		Hostname: hostname,
 		Kernel:   kernel,
 		Label:    c.opts.Label,
+		NodeID:   resolveNodeID(c.opts.NodeID, hostname),
 		Uptime:   uptime,
 		BootTime: float64(now.Unix()) - uptime,
 	}

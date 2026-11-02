@@ -5,6 +5,8 @@
 // 以保证旧前端仍可工作。
 package collector
 
+import "time"
+
 // Snapshot 是一次采样的完整快照。
 type Snapshot struct {
 	TS       float64 `json:"ts"`
@@ -24,9 +26,12 @@ type Snapshot struct {
 
 // Host 主机静态信息。
 type Host struct {
-	Hostname string  `json:"hostname"`
-	Kernel   string  `json:"kernel"`
-	Label    string  `json:"label"`
+	Hostname string `json:"hostname"`
+	Kernel   string `json:"kernel"`
+	Label    string `json:"label"`
+	// NodeID 是节点唯一标识，供将来多机汇聚时区分来源。
+	// 单机使用时可忽略；留空表示回退到 Hostname。
+	NodeID   string  `json:"node_id"`
 	Uptime   float64 `json:"uptime"`
 	BootTime float64 `json:"boot_time"`
 }
@@ -205,6 +210,20 @@ type Options struct {
 	// 供 Headless 探针模式使用：Prometheus 端点只导出进程/线程总数，
 	// 并不导出 Top-N 进程列表，因此没有必要枚举、排序并补全命令行。
 	SkipProcessDetails bool
+
+	// NodeID 是节点唯一标识，用于将来多机汇聚时区分数据来源。
+	// 留空时依次回退到系统 machine-id、hostname。
+	NodeID string
+
+	// ProcessInterval 是进程榜的采样间隔（温档）。
+	//
+	// 采集分三档：热档每帧都采（CPU/内存/磁盘/网卡吞吐），
+	// 温档按本间隔采（进程榜排名），冷档按 SlowInterval 采（TCP 状态、线程数）。
+	// 进程榜之所以不需要秒级：排名变化远慢于 1Hz，而枚举全表在 macOS 上
+	// 需要 fork ps 子进程，是全场最贵的采集项之一。
+	ProcessInterval time.Duration
+	// SlowInterval 是冷档采样间隔（TCP 连接状态、线程数）。
+	SlowInterval time.Duration
 }
 
 // Collector 采集器接口。
@@ -219,6 +238,14 @@ type Collector interface {
 func New(opts Options) Collector {
 	if opts.TopProcesses <= 0 {
 		opts.TopProcesses = 15
+	}
+	// 分档采样的默认值，与 config 层默认保持一致的语义：
+	// 热档由调用方的采样循环决定，这里只兜底温/冷档。
+	if opts.ProcessInterval <= 0 {
+		opts.ProcessInterval = 3 * time.Second
+	}
+	if opts.SlowInterval <= 0 {
+		opts.SlowInterval = 10 * time.Second
 	}
 	return newCollector(opts)
 }

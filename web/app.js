@@ -26,6 +26,15 @@
     while (n >= 1024 && i < u.length - 1) { n /= 1024; i += 1; }
     return `${n.toFixed(i === 0 ? 0 : 1)} ${u[i]}`;
   }
+  // rateParts 把每秒字节数拆成「数值 + 单位」，供大数字与图表共用。
+  // 直接对 MB 取整会让 KB/s 级流量恒显示 0.00，失去对轻微流量的感知。
+  function rateParts(bps) {
+    const u = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+    let i = 0; let n = Number(bps) || 0;
+    while (n >= 1024 && i < u.length - 1) { n /= 1024; i += 1; }
+    return { value: n, unit: u[i] };
+  }
+
   function rate(bps) {
     if (bps === undefined || bps === null) return '—';
     const u = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
@@ -60,6 +69,33 @@
     const dt = toDate(d);
     return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}:${String(dt.getSeconds()).padStart(2, '0')}`;
   };
+  // historyTimeFmt 按时间跨度选择横轴标签粒度。
+  // 历史模式原先统一用 MM-DD HH:MM:SS（17 字符），在约 500px 宽的卡片里
+  // 会挤满标签；短跨度只到分钟即可，长跨度才需要日期。
+  // 判据用实际数据跨度而非所选档位：刚启动时「5 分钟」档里只有几十秒数据，
+  // 刻度间隔仍按点数算，落到分钟会退化成相邻几个同样的「17:41」，此时必须保留秒。
+  function historyTimeFmt(range, spanSec) {
+    if (spanSec > 0 && spanSec < 180) {
+      return (ts) => clockText(ts * 1000);
+    }
+    if (range === '5m' || range === '1h') {
+      return (ts) => {
+        const d = new Date(ts * 1000);
+        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      };
+    }
+    return (ts) => {
+      const d = new Date(ts * 1000);
+      return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ` +
+             `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    };
+  }
+
+  // historyLabelGap 返回相邻横轴标签最少要间隔多少秒才不重复。
+  // 刻度间隔只按点数推导（每 6 个点取一个），跨度短或采样稀疏时会落进同一分钟，
+  // 于是同一个「17:41」连着出现好几次；这个值用来把间隔抬到粒度之上。
+  const historyLabelGap = (spanSec) => (spanSec > 0 && spanSec < 180 ? 1 : 60);
+
   const dateText = (ts) => {
     const d = toDate(ts);
     return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${clockText(d)}`;
@@ -154,9 +190,27 @@
     opacity: 1
   });
 
-  function catAxis(times, fmt) {
+  function catAxis(times, fmt, minGapSec) {
     const n = times.length;
     const colors = getThemeColors();
+    // 刻度间隔先按点数推导（每 6 个点取一个），再用 minGapSec 抬高到时间粒度之上：
+    // 只按点数算的话，跨度短、采样稀疏时几个刻度会落进同一分钟，标签重复。
+    let step = n > 1 ? Math.ceil(n / 6) : 1;
+    if (minGapSec > 0 && n > 1) {
+      const avg = (times[n - 1] - times[0]) / (n - 1);
+      if (avg > 0) step = Math.max(step, Math.ceil(minGapSec / avg));
+    }
+    // 采样不均匀时（进程重启、历史断档）仍可能撞上同一分钟，
+    // 兜底与「上一个真正显示的标签」比较，相同就留空。
+    const labels = times.map((v) => fmt(Number(v)));
+    const shownLabels = [];
+    let lastShown = null;
+    for (let i = 0; i < labels.length; i++) {
+      if (i % step !== 0) { shownLabels.push(labels[i]); continue; }
+      const dup = labels[i] === lastShown;
+      shownLabels.push(dup ? '' : labels[i]);
+      if (!dup) lastShown = labels[i];
+    }
     return {
       type: 'category',
       data: times.map(String),
@@ -166,8 +220,8 @@
       axisLabel: {
         color: colors.muted,
         fontSize: 10,
-        formatter: (v) => fmt(Number(v)),
-        interval: n > 1 ? Math.max(0, Math.ceil(n / 6) - 1) : 0,
+        formatter: (v, i) => shownLabels[i] ?? fmt(Number(v)),
+        interval: step - 1,
       },
       splitLine: { show: false },
     };
@@ -393,12 +447,14 @@
 
   async function loadHistory(range) {
     mode = range;
-    timeFmt = (ts) => dateText(ts);
     const h = await (await fetch(api(`/api/history?range=${range}`))).json();
     if (!ready) return;
     const ts = h.ts || [];
     const brk = h.cpu_brk || [];
-    const ax = catAxis(ts, (v) => dateText(v));
+    const spanSec = ts.length > 1 ? ts[ts.length - 1] - ts[0] : 0;
+    timeFmt = historyTimeFmt(range, spanSec);
+    // 轴标签走 timeFmt，才能随跨度切换粒度（短跨度到分钟，长跨度带日期）
+    const ax = catAxis(ts, (v) => timeFmt(v), historyLabelGap(spanSec));
 
     const pick = (key) => ts.map((_, i) => (brk[i] || {})[key] || 0);
     charts.cpu.setOption({
@@ -477,9 +533,24 @@
     if ($('mem-sub')) $('mem-sub').textContent = `${bytes(mem.used)} / ${bytes(mem.total)}`;
 
     // 磁盘 象限
+    //
+    // 大字与主图表统一表达「I/O 吞吐」：原先大字是容量百分比、图表是 I/O 速率，
+    // 同一张卡里两个数字指向不同对象，瞥一眼容易误读成相关。
+    // 容量信息仍完整保留在下方的分区行与副标题里。
     const worst = parts.length ? parts.reduce((a, b) => (b.percent > a.percent ? b : a)) : null;
-    const diskPct = worst ? Math.min(100, Math.max(0, worst.percent)) : 0;
-    animateNumber($('disk-val'), diskPct, 0);
+    // 大字优先跟主图表表达同一件事（I/O 吞吐）；
+    // 但部分平台（如 macOS 纯 Go 构建）拿不到磁盘 I/O 数据，
+    // 此时退回容量百分比 —— 永远显示 0 B/s 比"语义略有错位"更糟。
+    const diskIOs = (s.disk || {}).io || [];
+    if (diskIOs.length > 0) {
+      const ioTotal = diskIOs.reduce((a, i) => a + (i.read_bps || 0) + (i.write_bps || 0), 0);
+      const ioRate = rateParts(ioTotal);
+      animateNumber($('disk-val'), ioRate.value, 2);
+      if ($('disk-unit')) $('disk-unit').textContent = ioRate.unit;
+    } else {
+      animateNumber($('disk-val'), worst ? Math.min(100, Math.max(0, worst.percent)) : 0, 0);
+      if ($('disk-unit')) $('disk-unit').textContent = '%';
+    }
     if ($('disk-sub')) {
       $('disk-sub').textContent = worst
         ? t('quad.disk.sub', { mount: worst.mount, free: bytes(worst.free) })
@@ -489,7 +560,9 @@
     // 网络 象限
     const rx = ifs.reduce((a, i) => a + i.rx_bps, 0);
     const tx = ifs.reduce((a, i) => a + i.tx_bps, 0);
-    animateNumber($('net-val'), (rx + tx) / 1024 / 1024, 2);
+    const netRate = rateParts(rx + tx);
+    animateNumber($('net-val'), netRate.value, 2);
+    if ($('net-unit')) $('net-unit').textContent = netRate.unit;
     if ($('net-sub')) $('net-sub').textContent = `↓ ${compactRate(rx)}  ↑ ${compactRate(tx)}`;
 
     // 状态判定胶囊

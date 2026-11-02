@@ -30,6 +30,18 @@ type otherCollector struct {
 	prevNet      map[string]net.IOCountersStat
 	prevProc     map[int32]float64
 	prevAt       time.Time
+
+	// 温档（进程榜）缓存：到点才重新枚举，其余帧复用上次结果。
+	procAt         time.Time
+	cachedProcs    []Proc
+	cachedProcsMem []Proc
+	cachedProcSt   procStats
+
+	// 冷档缓存：TCP 连接状态与线程总数。
+	slowAt         time.Time
+	cachedTCP      map[string]int
+	cachedTCPTotal int
+	cachedThreads  int
 }
 
 func newCollector(opts Options) Collector {
@@ -59,17 +71,65 @@ func (c *otherCollector) Collect() (*Snapshot, error) {
 		ActiveAlerts: []ActiveAlert{},
 	}
 
+	// ---- 热档：每帧都采，实时看板的核心数据 ----
 	snap.Host = c.collectHost(now)
 	snap.CPU = c.collectCPU(dt)
 	snap.Mem = c.collectMem()
 	snap.Disk = c.collectDisk(dt)
 	snap.Net = c.collectNet(dt)
-	byCPU, byMem, st := c.collectProcs(dt, snap.Mem.Total)
-	snap.Procs, snap.ProcsMem = byCPU, byMem
-	snap.Sys = c.collectSys(st)
+
+	// ---- 温档：进程榜 ----
+	//
+	// 进程榜不需要秒级：排名变化远慢于 1Hz，而枚举全表在 macOS 上要 fork
+	// ps 子进程（实测约 60ms CPU + 150KB 分配），是全场最贵的采集项。
+	// 未到采样点时直接复用上次缓存，前端看到的仍是完整的 Snapshot。
+	if shouldSample(c.procAt, now, c.opts.ProcessInterval) {
+		// 差分间隔用「上次进程采样的实际间隔」，不能用主循环的 dt，
+		// 否则占比会被降频比例稀释。见 sampleDelta 的说明。
+		procDt := sampleDelta(c.procAt, now, c.opts.ProcessInterval)
+		byCPU, byMem, st := c.collectProcs(procDt, snap.Mem.Total)
+		c.cachedProcs, c.cachedProcsMem, c.cachedProcSt = byCPU, byMem, st
+		// 非 macOS 平台线程数由进程枚举一并返回，这里顺带记下。
+		if st.Threads > 0 {
+			c.cachedThreads = st.Threads
+		}
+		c.procAt = now
+	}
+	snap.Procs, snap.ProcsMem = c.cachedProcs, c.cachedProcsMem
+
+	// ---- 冷档：TCP 连接状态与线程数 ----
+	//
+	// 这两项数值缓变，且是全场最贵的采集（TCP 全表遍历约 135ms，
+	// ps -axM 线程表约 40ms 且输出近 600KB），没有必要秒级刷新。
+	if shouldSample(c.slowAt, now, c.opts.SlowInterval) {
+		c.cachedTCP, c.cachedTCPTotal = c.sampleTCP()
+		if perPID, total := sampleThreads(); total > 0 {
+			c.cachedThreads = total
+			// 线程数是进程属性，回填到已缓存的榜单条目上。
+			applyProcThreads(c.cachedProcs, perPID)
+			applyProcThreads(c.cachedProcsMem, perPID)
+		}
+		c.slowAt = now
+	}
+	snap.Net.TCP, snap.Net.TCPTotal = c.cachedTCP, c.cachedTCPTotal
+
+	snap.Sys = c.collectSys(c.cachedProcSt)
+	snap.Sys.Threads = c.cachedThreads
 
 	c.prevAt = now
 	return snap, nil
+}
+
+// applyProcThreads 把冷档采到的线程数回填到已缓存的进程榜条目上。
+func applyProcThreads(rows []Proc, perPID map[int32]int) {
+	if len(perPID) == 0 {
+		return
+	}
+	for i := range rows {
+		if n, ok := perPID[int32(rows[i].PID)]; ok {
+			rows[i].Threads = n
+		}
+	}
 }
 
 func (c *otherCollector) collectHost(now time.Time) Host {
@@ -79,6 +139,7 @@ func (c *otherCollector) collectHost(now time.Time) Host {
 		Hostname: hostname,
 		Kernel:   runtime.GOOS + "/" + runtime.GOARCH,
 		Label:    c.opts.Label,
+		NodeID:   resolveNodeID(c.opts.NodeID, hostname),
 		Uptime:   uptime,
 		BootTime: float64(now.Unix()) - uptime,
 	}
@@ -317,6 +378,16 @@ func (c *otherCollector) collectNet(dt float64) Net {
 		return ifaces[i].RxBPS+ifaces[i].TxBPS > ifaces[j].RxBPS+ifaces[j].TxBPS
 	})
 
+	// TCP 状态属于冷档，由 sampleTCP 单独采样并在 Collect 中合并。
+	return Net{Interfaces: ifaces}
+}
+
+// sampleTCP 枚举全系统 TCP 连接并按状态归类（冷档）。
+//
+// 这是非 Linux 平台上第二个昂贵的采集项：gopsutil 的 Connections 会遍历
+// 整张 TCP 连接表，实测在数百连接时约 135ms CPU。而它只用于界面上
+// 一行「连接数」提示，完全没有秒级刷新的必要。
+func (c *otherCollector) sampleTCP() (map[string]int, int) {
 	tcp := map[string]int{}
 	if conns, err := net.Connections("tcp"); err == nil {
 		for _, conn := range conns {
@@ -327,7 +398,7 @@ func (c *otherCollector) collectNet(dt float64) Net {
 	for _, v := range tcp {
 		total += v
 	}
-	return Net{Interfaces: ifaces, TCP: tcp, TCPTotal: total}
+	return tcp, total
 }
 
 // collectSys 汇总系统级指标。procCount 由 collectProcs 一并返回，

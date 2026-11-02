@@ -74,3 +74,8 @@ func platformFileDescriptors() (used, max int) { return 0, 0 }
 
 // getPlatformMemCache 在非 macOS 平台上返回 0（由 gopsutil 的 Cached 字段提供）。
 func getPlatformMemCache() (cached, shared uint64) { return 0, 0 }
+
+// sampleThreads 在非 macOS 平台上无需单独采样：
+// gopsutil 的原生后端在枚举进程时已顺带返回线程数，
+// 由 readProcTable 一并填充，因此这里返回空结果表示「无需覆盖」。
+func sampleThreads() (map[int32]int, int) { return nil, 0 }

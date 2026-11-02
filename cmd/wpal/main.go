@@ -101,12 +101,26 @@ func run() int {
 		cfg.Agent.NodeID = *nodeID
 	}
 
+	procDur, err := cfg.ProcessDuration()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "配置错误: %v\n", err)
+		return 1
+	}
+	slowDur, err := cfg.SlowDuration()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "配置错误: %v\n", err)
+		return 1
+	}
+
 	col := collector.New(collector.Options{
 		HostRoot:           cfg.Collect.HostRoot,
 		Label:              cfg.Collect.Label,
 		TopProcesses:       cfg.Collect.TopProcesses,
 		IncludeVirtualNics: cfg.Collect.IncludeVirtualNics,
 		SkipProcessDetails: cfg.Agent.Headless,
+		NodeID:             cfg.Agent.NodeID,
+		ProcessInterval:    procDur,
+		SlowInterval:       slowDur,
 	})
 	defer col.Close()
 

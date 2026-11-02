@@ -37,6 +37,11 @@ type CollectConfig struct {
 	TopProcesses       int    `yaml:"top_processes"`
 	HostRoot           string `yaml:"host_root"`
 	Label              string `yaml:"label"`
+	// ProcessInterval 是进程榜的采样间隔（温档）。
+	// 进程排名变化远慢于 1Hz，降频可显著降低枚举全表的开销。
+	ProcessInterval string `yaml:"process_interval"`
+	// SlowInterval 是 TCP 连接状态与线程数的采样间隔（冷档）。
+	SlowInterval string `yaml:"slow_interval"`
 }
 
 // HistoryConfig 是历史存储相关配置。
@@ -93,6 +98,7 @@ func Default() Config {
 		Server: ServerConfig{Listen: "127.0.0.1:8891", BasePath: ""},
 		Collect: CollectConfig{
 			Interval: "1s", IncludeVirtualNics: false, TopProcesses: 15,
+			ProcessInterval: "3s", SlowInterval: "10s",
 		},
 		History: HistoryConfig{
 			Enabled: true, Retain: "168h", PersistInterval: "10s", DataDir: "data",
@@ -169,6 +175,12 @@ func (c *Config) applyEnv() {
 	if v := getEnv("VIRTUAL_NICS"); v != "" {
 		c.Collect.IncludeVirtualNics = v == "1" || strings.EqualFold(v, "true")
 	}
+	if v := getEnv("PROCESS_INTERVAL"); v != "" {
+		c.Collect.ProcessInterval = v
+	}
+	if v := getEnv("SLOW_INTERVAL"); v != "" {
+		c.Collect.SlowInterval = v
+	}
 	if v := getEnv("HEADLESS"); v != "" {
 		c.Agent.Headless = v == "1" || strings.EqualFold(v, "true")
 	}
@@ -190,6 +202,12 @@ func (c *Config) validate() error {
 		return err
 	}
 	if _, err := c.RetainDuration(); err != nil {
+		return err
+	}
+	if _, err := c.ProcessDuration(); err != nil {
+		return err
+	}
+	if _, err := c.SlowDuration(); err != nil {
 		return err
 	}
 	for name, th := range map[string]Threshold{
@@ -218,6 +236,16 @@ func (c *Config) validate() error {
 // CollectDuration 返回采样周期。
 func (c *Config) CollectDuration() (time.Duration, error) {
 	return parseDur(c.Collect.Interval, "collect.interval")
+}
+
+// ProcessDuration 返回进程榜采样周期（温档）。
+func (c *Config) ProcessDuration() (time.Duration, error) {
+	return parseDur(c.Collect.ProcessInterval, "collect.process_interval")
+}
+
+// SlowDuration 返回冷档采样周期（TCP 状态与线程数）。
+func (c *Config) SlowDuration() (time.Duration, error) {
+	return parseDur(c.Collect.SlowInterval, "collect.slow_interval")
 }
 
 // PersistDuration 返回历史落盘周期。
